@@ -4,12 +4,20 @@ bin/
 target/
 
 # IDE files
-.classpath
-.project
-.settings/
 .vscode/
 *.iml
 .idea/
+
+# Eclipse files (keep for Maven integration)
+# .classpath
+# .project
+# .settings/
+
+# Maven
+target/
+.mvn/
+mvnw
+mvnw.cmd
 
 # OS generated files
 .DS_Store

@@ -1,29 +1,29 @@
 # PostgreSQL POJO Generator
 
-A powerful Java utility that automatically generates Plain Old Java Objects (POJOs) from PostgreSQL database tables with comprehensive constraint and relationship handling.
+A simple Maven-based Java utility that automatically generates Plain Old Java Objects (POJOs) from PostgreSQL database tables with constraint and relationship handling.
 
 ## 🚀 Features
 
-- **Complete Database Introspection**: Automatically discovers tables, columns, and relationships
-- **Constraint Handling**: Supports primary keys, foreign keys, unique constraints, NOT NULL, and indexing
+- **Database Introspection**: Automatically discovers tables, columns, and relationships
+- **Constraint Handling**: Supports primary keys, foreign keys, indexes, NOT NULL constraints
 - **Relationship Mapping**: Full foreign key relationship documentation
-- **Index Information**: Captures and documents all database indexes including unique indexes
+- **Index Information**: Captures and documents database indexes including unique indexes
 - **Modern Java Types**: Uses `LocalDateTime`, `LocalDate`, `BigDecimal`, etc.
 - **Clean Code Generation**: Generates well-documented POJOs with proper getters/setters
-- **Comprehensive Documentation**: Each generated class includes complete table metadata
+- **Maven Integration**: Simple Maven project structure for easy dependency management
 
 ## 📁 Project Structure
 
 ```
-postgresConnect/
+postgresql-pojo-generator/
+├── pom.xml                           # Maven configuration
 ├── src/
-│   ├── module-info.java              # Java module definition
-│   └── postgresConnect/
-│       ├── PostgresConnect.java      # Database connection test
-│       ├── PojoGenerator.java        # Main POJO generator
-│       └── generated/                # Generated POJO classes
-├── lib/
-│   └── postgresql-42.7.7.jar        # PostgreSQL JDBC driver
+│   └── main/
+│       └── java/
+│           └── com/
+│               └── pojogenerator/
+│                   ├── PojoGenerator.java    # Main POJO generator
+│                   └── pojos/                # Generated POJO classes
 └── README.md
 ```
 
@@ -31,16 +31,17 @@ postgresConnect/
 
 ### Prerequisites
 - Java 17 or higher
+- Maven 3.6 or higher
 - PostgreSQL database
 - JDBC access to your PostgreSQL database
 
 ### Database Configuration
-Update the database connection details in `PojoGenerator.java`:
+Update the database connection details in `src/main/java/com/pojogenerator/PojoGenerator.java`:
 
 ```java
-static final String DB_URL = "jdbc:postgresql://localhost:5432/your_database";
-static final String DB_USER = "your_username";
-static final String DB_PASS = "your_password";
+private static final String DB_URL = "jdbc:postgresql://localhost:5432/your_database";
+private static final String DB_USER = "your_username";
+private static final String DB_PASS = "your_password";
 ```
 
 ## 🏃‍♂️ Usage
@@ -49,15 +50,20 @@ static final String DB_PASS = "your_password";
 
 1. **Compile the project:**
    ```bash
-   javac -cp "lib/postgresql-42.7.7.jar" src/postgresConnect/PojoGenerator.java
+   mvn compile
    ```
 
 2. **Run the generator:**
    ```bash
-   java -cp "lib/postgresql-42.7.7.jar:src" postgresConnect.PojoGenerator
+   mvn exec:java
    ```
 
-3. **Generated POJOs** will be created in `src/postgresConnect/generated/`
+3. **Generated POJOs** will be created in `src/main/java/com/pojogenerator/pojos/`
+
+### Alternative: Run with Maven exec plugin
+```bash
+mvn exec:java -Dexec.mainClass="com.pojogenerator.PojoGenerator"
+```
 
 ### Example Generated POJO
 
