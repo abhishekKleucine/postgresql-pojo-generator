@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: parameter_values
@@ -57,9 +58,9 @@ public class ParameterValues implements Serializable {
 
     /**
      * Database column: choices
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String choices;
+    private JsonNode choices;
 
     /**
      * Database column: jobs_id
@@ -116,9 +117,9 @@ public class ParameterValues implements Serializable {
 
     /**
      * Database column: impacted_by
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String impactedBy;
+    private JsonNode impactedBy;
 
     /**
      * Database column: verified
@@ -241,9 +242,9 @@ public class ParameterValues implements Serializable {
 
     /**
      * Gets choices
-     * @return String
+     * @return JsonNode
      */
-    public String getChoices() {
+    public JsonNode getChoices() {
         return this.choices;
     }
 
@@ -251,7 +252,7 @@ public class ParameterValues implements Serializable {
      * Sets choices
      * @param choices the value to set
      */
-    public void setChoices(String choices) {
+    public void setChoices(JsonNode choices) {
         this.choices = choices;
     }
 
@@ -385,9 +386,9 @@ public class ParameterValues implements Serializable {
 
     /**
      * Gets impacted_by
-     * @return String
+     * @return JsonNode
      */
-    public String getImpactedBy() {
+    public JsonNode getImpactedBy() {
         return this.impactedBy;
     }
 
@@ -395,7 +396,7 @@ public class ParameterValues implements Serializable {
      * Sets impacted_by
      * @param impactedBy the value to set
      */
-    public void setImpactedBy(String impactedBy) {
+    public void setImpactedBy(JsonNode impactedBy) {
         this.impactedBy = impactedBy;
     }
 

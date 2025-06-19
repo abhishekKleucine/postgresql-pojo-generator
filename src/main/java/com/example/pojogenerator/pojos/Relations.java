@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: relations
@@ -48,15 +49,15 @@ public class Relations implements Serializable {
 
     /**
      * Database column: validations
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String validations;
+    private JsonNode validations;
 
     /**
      * Database column: variables
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String variables;
+    private JsonNode variables;
 
     /**
      * Database column: cardinality
@@ -191,9 +192,9 @@ public class Relations implements Serializable {
 
     /**
      * Gets validations
-     * @return String
+     * @return JsonNode
      */
-    public String getValidations() {
+    public JsonNode getValidations() {
         return this.validations;
     }
 
@@ -201,15 +202,15 @@ public class Relations implements Serializable {
      * Sets validations
      * @param validations the value to set
      */
-    public void setValidations(String validations) {
+    public void setValidations(JsonNode validations) {
         this.validations = validations;
     }
 
     /**
      * Gets variables
-     * @return String
+     * @return JsonNode
      */
-    public String getVariables() {
+    public JsonNode getVariables() {
         return this.variables;
     }
 
@@ -217,7 +218,7 @@ public class Relations implements Serializable {
      * Sets variables
      * @param variables the value to set
      */
-    public void setVariables(String variables) {
+    public void setVariables(JsonNode variables) {
         this.variables = variables;
     }
 

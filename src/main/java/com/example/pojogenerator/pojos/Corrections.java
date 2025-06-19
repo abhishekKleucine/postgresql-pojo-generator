@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: corrections
@@ -52,15 +53,15 @@ public class Corrections implements Serializable {
 
     /**
      * Database column: old_choices
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String oldChoices;
+    private JsonNode oldChoices;
 
     /**
      * Database column: new_choices
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String newChoices;
+    private JsonNode newChoices;
 
     /**
      * Database column: parameter_values_id
@@ -216,9 +217,9 @@ public class Corrections implements Serializable {
 
     /**
      * Gets old_choices
-     * @return String
+     * @return JsonNode
      */
-    public String getOldChoices() {
+    public JsonNode getOldChoices() {
         return this.oldChoices;
     }
 
@@ -226,15 +227,15 @@ public class Corrections implements Serializable {
      * Sets old_choices
      * @param oldChoices the value to set
      */
-    public void setOldChoices(String oldChoices) {
+    public void setOldChoices(JsonNode oldChoices) {
         this.oldChoices = oldChoices;
     }
 
     /**
      * Gets new_choices
-     * @return String
+     * @return JsonNode
      */
-    public String getNewChoices() {
+    public JsonNode getNewChoices() {
         return this.newChoices;
     }
 
@@ -242,7 +243,7 @@ public class Corrections implements Serializable {
      * Sets new_choices
      * @param newChoices the value to set
      */
-    public void setNewChoices(String newChoices) {
+    public void setNewChoices(JsonNode newChoices) {
         this.newChoices = newChoices;
     }
 

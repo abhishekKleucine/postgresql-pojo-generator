@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: task_recurrences
@@ -33,9 +34,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: start_date_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String startDateDuration;
+    private JsonNode startDateDuration;
 
     /**
      * Database column: due_date_interval
@@ -45,9 +46,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: due_date_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String dueDateDuration;
+    private JsonNode dueDateDuration;
 
     /**
      * Database column: created_at
@@ -81,9 +82,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: positive_start_date_tolerance_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String positiveStartDateToleranceDuration;
+    private JsonNode positiveStartDateToleranceDuration;
 
     /**
      * Database column: negative_start_date_tolerance_interval
@@ -93,9 +94,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: negative_start_date_tolerance_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String negativeStartDateToleranceDuration;
+    private JsonNode negativeStartDateToleranceDuration;
 
     /**
      * Database column: positive_due_date_tolerance_interval
@@ -105,9 +106,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: positive_due_date_tolerance_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String positiveDueDateToleranceDuration;
+    private JsonNode positiveDueDateToleranceDuration;
 
     /**
      * Database column: negative_due_date_tolerance_interval
@@ -117,9 +118,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Database column: negative_due_date_tolerance_duration
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String negativeDueDateToleranceDuration;
+    private JsonNode negativeDueDateToleranceDuration;
 
     /**
      * Default constructor
@@ -161,9 +162,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets start_date_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getStartDateDuration() {
+    public JsonNode getStartDateDuration() {
         return this.startDateDuration;
     }
 
@@ -171,7 +172,7 @@ public class TaskRecurrences implements Serializable {
      * Sets start_date_duration
      * @param startDateDuration the value to set
      */
-    public void setStartDateDuration(String startDateDuration) {
+    public void setStartDateDuration(JsonNode startDateDuration) {
         this.startDateDuration = startDateDuration;
     }
 
@@ -193,9 +194,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets due_date_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getDueDateDuration() {
+    public JsonNode getDueDateDuration() {
         return this.dueDateDuration;
     }
 
@@ -203,7 +204,7 @@ public class TaskRecurrences implements Serializable {
      * Sets due_date_duration
      * @param dueDateDuration the value to set
      */
-    public void setDueDateDuration(String dueDateDuration) {
+    public void setDueDateDuration(JsonNode dueDateDuration) {
         this.dueDateDuration = dueDateDuration;
     }
 
@@ -289,9 +290,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets positive_start_date_tolerance_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getPositiveStartDateToleranceDuration() {
+    public JsonNode getPositiveStartDateToleranceDuration() {
         return this.positiveStartDateToleranceDuration;
     }
 
@@ -299,7 +300,7 @@ public class TaskRecurrences implements Serializable {
      * Sets positive_start_date_tolerance_duration
      * @param positiveStartDateToleranceDuration the value to set
      */
-    public void setPositiveStartDateToleranceDuration(String positiveStartDateToleranceDuration) {
+    public void setPositiveStartDateToleranceDuration(JsonNode positiveStartDateToleranceDuration) {
         this.positiveStartDateToleranceDuration = positiveStartDateToleranceDuration;
     }
 
@@ -321,9 +322,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets negative_start_date_tolerance_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getNegativeStartDateToleranceDuration() {
+    public JsonNode getNegativeStartDateToleranceDuration() {
         return this.negativeStartDateToleranceDuration;
     }
 
@@ -331,7 +332,7 @@ public class TaskRecurrences implements Serializable {
      * Sets negative_start_date_tolerance_duration
      * @param negativeStartDateToleranceDuration the value to set
      */
-    public void setNegativeStartDateToleranceDuration(String negativeStartDateToleranceDuration) {
+    public void setNegativeStartDateToleranceDuration(JsonNode negativeStartDateToleranceDuration) {
         this.negativeStartDateToleranceDuration = negativeStartDateToleranceDuration;
     }
 
@@ -353,9 +354,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets positive_due_date_tolerance_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getPositiveDueDateToleranceDuration() {
+    public JsonNode getPositiveDueDateToleranceDuration() {
         return this.positiveDueDateToleranceDuration;
     }
 
@@ -363,7 +364,7 @@ public class TaskRecurrences implements Serializable {
      * Sets positive_due_date_tolerance_duration
      * @param positiveDueDateToleranceDuration the value to set
      */
-    public void setPositiveDueDateToleranceDuration(String positiveDueDateToleranceDuration) {
+    public void setPositiveDueDateToleranceDuration(JsonNode positiveDueDateToleranceDuration) {
         this.positiveDueDateToleranceDuration = positiveDueDateToleranceDuration;
     }
 
@@ -385,9 +386,9 @@ public class TaskRecurrences implements Serializable {
 
     /**
      * Gets negative_due_date_tolerance_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getNegativeDueDateToleranceDuration() {
+    public JsonNode getNegativeDueDateToleranceDuration() {
         return this.negativeDueDateToleranceDuration;
     }
 
@@ -395,7 +396,7 @@ public class TaskRecurrences implements Serializable {
      * Sets negative_due_date_tolerance_duration
      * @param negativeDueDateToleranceDuration the value to set
      */
-    public void setNegativeDueDateToleranceDuration(String negativeDueDateToleranceDuration) {
+    public void setNegativeDueDateToleranceDuration(JsonNode negativeDueDateToleranceDuration) {
         this.negativeDueDateToleranceDuration = negativeDueDateToleranceDuration;
     }
 

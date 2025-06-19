@@ -102,6 +102,12 @@ public class PojoGenerator {
             sb.append("import java.math.BigDecimal;\n");
         }
         
+        boolean needsJsonNode = columns.values().stream()
+            .anyMatch(col -> col.javaType.equals("JsonNode"));
+        if (needsJsonNode) {
+            sb.append("import com.fasterxml.jackson.databind.JsonNode;\n");
+        }
+        
         sb.append("\n");
 
         // Class documentation
@@ -312,7 +318,7 @@ public class PojoGenerator {
                 return "java.util.UUID";
             case "json":
             case "jsonb":
-                return "String";
+                return "JsonNode";
             default:
                 return "String";
         }

@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: effects
@@ -48,15 +49,15 @@ public class Effects implements Serializable {
 
     /**
      * Database column: query
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String query;
+    private JsonNode query;
 
     /**
      * Database column: api_endpoint
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String apiEndpoint;
+    private JsonNode apiEndpoint;
 
     /**
      * Database column: api_method
@@ -66,15 +67,15 @@ public class Effects implements Serializable {
 
     /**
      * Database column: api_payload
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String apiPayload;
+    private JsonNode apiPayload;
 
     /**
      * Database column: api_headers
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String apiHeaders;
+    private JsonNode apiHeaders;
 
     /**
      * Database column: created_at
@@ -198,9 +199,9 @@ public class Effects implements Serializable {
 
     /**
      * Gets query
-     * @return String
+     * @return JsonNode
      */
-    public String getQuery() {
+    public JsonNode getQuery() {
         return this.query;
     }
 
@@ -208,15 +209,15 @@ public class Effects implements Serializable {
      * Sets query
      * @param query the value to set
      */
-    public void setQuery(String query) {
+    public void setQuery(JsonNode query) {
         this.query = query;
     }
 
     /**
      * Gets api_endpoint
-     * @return String
+     * @return JsonNode
      */
-    public String getApiEndpoint() {
+    public JsonNode getApiEndpoint() {
         return this.apiEndpoint;
     }
 
@@ -224,7 +225,7 @@ public class Effects implements Serializable {
      * Sets api_endpoint
      * @param apiEndpoint the value to set
      */
-    public void setApiEndpoint(String apiEndpoint) {
+    public void setApiEndpoint(JsonNode apiEndpoint) {
         this.apiEndpoint = apiEndpoint;
     }
 
@@ -246,9 +247,9 @@ public class Effects implements Serializable {
 
     /**
      * Gets api_payload
-     * @return String
+     * @return JsonNode
      */
-    public String getApiPayload() {
+    public JsonNode getApiPayload() {
         return this.apiPayload;
     }
 
@@ -256,15 +257,15 @@ public class Effects implements Serializable {
      * Sets api_payload
      * @param apiPayload the value to set
      */
-    public void setApiPayload(String apiPayload) {
+    public void setApiPayload(JsonNode apiPayload) {
         this.apiPayload = apiPayload;
     }
 
     /**
      * Gets api_headers
-     * @return String
+     * @return JsonNode
      */
-    public String getApiHeaders() {
+    public JsonNode getApiHeaders() {
         return this.apiHeaders;
     }
 
@@ -272,7 +273,7 @@ public class Effects implements Serializable {
      * Sets api_headers
      * @param apiHeaders the value to set
      */
-    public void setApiHeaders(String apiHeaders) {
+    public void setApiHeaders(JsonNode apiHeaders) {
         this.apiHeaders = apiHeaders;
     }
 

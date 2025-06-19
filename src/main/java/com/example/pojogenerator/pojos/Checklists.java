@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: checklists
@@ -128,9 +129,9 @@ public class Checklists implements Serializable {
 
     /**
      * Database column: job_log_columns
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String jobLogColumns;
+    private JsonNode jobLogColumns;
 
     /**
      * Database column: is_global
@@ -408,9 +409,9 @@ public class Checklists implements Serializable {
 
     /**
      * Gets job_log_columns
-     * @return String
+     * @return JsonNode
      */
-    public String getJobLogColumns() {
+    public JsonNode getJobLogColumns() {
         return this.jobLogColumns;
     }
 
@@ -418,7 +419,7 @@ public class Checklists implements Serializable {
      * Sets job_log_columns
      * @param jobLogColumns the value to set
      */
-    public void setJobLogColumns(String jobLogColumns) {
+    public void setJobLogColumns(JsonNode jobLogColumns) {
         this.jobLogColumns = jobLogColumns;
     }
 

@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: exceptions
@@ -124,9 +125,9 @@ public class Exceptions implements Serializable {
 
     /**
      * Database column: choices
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String choices;
+    private JsonNode choices;
 
     /**
      * Database column: rules_id
@@ -398,9 +399,9 @@ public class Exceptions implements Serializable {
 
     /**
      * Gets choices
-     * @return String
+     * @return JsonNode
      */
-    public String getChoices() {
+    public JsonNode getChoices() {
         return this.choices;
     }
 
@@ -408,7 +409,7 @@ public class Exceptions implements Serializable {
      * Sets choices
      * @param choices the value to set
      */
-    public void setChoices(String choices) {
+    public void setChoices(JsonNode choices) {
         this.choices = choices;
     }
 

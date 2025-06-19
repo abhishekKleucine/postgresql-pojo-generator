@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: parameters
@@ -45,9 +46,9 @@ public class Parameters implements Serializable {
 
     /**
      * Database column: data
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String data;
+    private JsonNode data;
 
     /**
      * Database column: label
@@ -108,9 +109,9 @@ public class Parameters implements Serializable {
 
     /**
      * Database column: validations
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String validations;
+    private JsonNode validations;
 
     /**
      * Database column: target_entity_type
@@ -133,15 +134,15 @@ public class Parameters implements Serializable {
 
     /**
      * Database column: auto_initialize
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String autoInitialize;
+    private JsonNode autoInitialize;
 
     /**
      * Database column: rules
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String rules;
+    private JsonNode rules;
 
     /**
      * Database column: hidden
@@ -157,9 +158,9 @@ public class Parameters implements Serializable {
 
     /**
      * Database column: metadata
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String metadata;
+    private JsonNode metadata;
 
     /**
      * Default constructor
@@ -217,9 +218,9 @@ public class Parameters implements Serializable {
 
     /**
      * Gets data
-     * @return String
+     * @return JsonNode
      */
-    public String getData() {
+    public JsonNode getData() {
         return this.data;
     }
 
@@ -227,7 +228,7 @@ public class Parameters implements Serializable {
      * Sets data
      * @param data the value to set
      */
-    public void setData(String data) {
+    public void setData(JsonNode data) {
         this.data = data;
     }
 
@@ -377,9 +378,9 @@ public class Parameters implements Serializable {
 
     /**
      * Gets validations
-     * @return String
+     * @return JsonNode
      */
-    public String getValidations() {
+    public JsonNode getValidations() {
         return this.validations;
     }
 
@@ -387,7 +388,7 @@ public class Parameters implements Serializable {
      * Sets validations
      * @param validations the value to set
      */
-    public void setValidations(String validations) {
+    public void setValidations(JsonNode validations) {
         this.validations = validations;
     }
 
@@ -441,9 +442,9 @@ public class Parameters implements Serializable {
 
     /**
      * Gets auto_initialize
-     * @return String
+     * @return JsonNode
      */
-    public String getAutoInitialize() {
+    public JsonNode getAutoInitialize() {
         return this.autoInitialize;
     }
 
@@ -451,15 +452,15 @@ public class Parameters implements Serializable {
      * Sets auto_initialize
      * @param autoInitialize the value to set
      */
-    public void setAutoInitialize(String autoInitialize) {
+    public void setAutoInitialize(JsonNode autoInitialize) {
         this.autoInitialize = autoInitialize;
     }
 
     /**
      * Gets rules
-     * @return String
+     * @return JsonNode
      */
-    public String getRules() {
+    public JsonNode getRules() {
         return this.rules;
     }
 
@@ -467,7 +468,7 @@ public class Parameters implements Serializable {
      * Sets rules
      * @param rules the value to set
      */
-    public void setRules(String rules) {
+    public void setRules(JsonNode rules) {
         this.rules = rules;
     }
 
@@ -505,9 +506,9 @@ public class Parameters implements Serializable {
 
     /**
      * Gets metadata
-     * @return String
+     * @return JsonNode
      */
-    public String getMetadata() {
+    public JsonNode getMetadata() {
         return this.metadata;
     }
 
@@ -515,7 +516,7 @@ public class Parameters implements Serializable {
      * Sets metadata
      * @param metadata the value to set
      */
-    public void setMetadata(String metadata) {
+    public void setMetadata(JsonNode metadata) {
         this.metadata = metadata;
     }
 

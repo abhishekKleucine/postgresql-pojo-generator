@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: automations
@@ -51,15 +52,15 @@ public class Automations implements Serializable {
 
     /**
      * Database column: action_details
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String actionDetails;
+    private JsonNode actionDetails;
 
     /**
      * Database column: trigger_details
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String triggerDetails;
+    private JsonNode triggerDetails;
 
     /**
      * Database column: created_at
@@ -179,9 +180,9 @@ public class Automations implements Serializable {
 
     /**
      * Gets action_details
-     * @return String
+     * @return JsonNode
      */
-    public String getActionDetails() {
+    public JsonNode getActionDetails() {
         return this.actionDetails;
     }
 
@@ -189,15 +190,15 @@ public class Automations implements Serializable {
      * Sets action_details
      * @param actionDetails the value to set
      */
-    public void setActionDetails(String actionDetails) {
+    public void setActionDetails(JsonNode actionDetails) {
         this.actionDetails = actionDetails;
     }
 
     /**
      * Gets trigger_details
-     * @return String
+     * @return JsonNode
      */
-    public String getTriggerDetails() {
+    public JsonNode getTriggerDetails() {
         return this.triggerDetails;
     }
 
@@ -205,7 +206,7 @@ public class Automations implements Serializable {
      * Sets trigger_details
      * @param triggerDetails the value to set
      */
-    public void setTriggerDetails(String triggerDetails) {
+    public void setTriggerDetails(JsonNode triggerDetails) {
         this.triggerDetails = triggerDetails;
     }
 

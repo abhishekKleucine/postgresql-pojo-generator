@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: job_audits
@@ -75,9 +76,9 @@ public class JobAudits implements Serializable {
 
     /**
      * Database column: parameters
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String parameters;
+    private JsonNode parameters;
 
     /**
      * Default constructor
@@ -231,9 +232,9 @@ public class JobAudits implements Serializable {
 
     /**
      * Gets parameters
-     * @return String
+     * @return JsonNode
      */
-    public String getParameters() {
+    public JsonNode getParameters() {
         return this.parameters;
     }
 
@@ -241,7 +242,7 @@ public class JobAudits implements Serializable {
      * Sets parameters
      * @param parameters the value to set
      */
-    public void setParameters(String parameters) {
+    public void setParameters(JsonNode parameters) {
         this.parameters = parameters;
     }
 

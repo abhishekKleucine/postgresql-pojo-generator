@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: interlocks
@@ -40,9 +41,9 @@ public class Interlocks implements Serializable {
 
     /**
      * Database column: validations
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String validations;
+    private JsonNode validations;
 
     /**
      * Database column: created_at
@@ -124,9 +125,9 @@ public class Interlocks implements Serializable {
 
     /**
      * Gets validations
-     * @return String
+     * @return JsonNode
      */
-    public String getValidations() {
+    public JsonNode getValidations() {
         return this.validations;
     }
 
@@ -134,7 +135,7 @@ public class Interlocks implements Serializable {
      * Sets validations
      * @param validations the value to set
      */
-    public void setValidations(String validations) {
+    public void setValidations(JsonNode validations) {
         this.validations = validations;
     }
 

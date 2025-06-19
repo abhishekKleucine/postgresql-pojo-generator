@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: temp_parameter_values
@@ -53,9 +54,9 @@ public class TempParameterValues implements Serializable {
 
     /**
      * Database column: choices
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String choices;
+    private JsonNode choices;
 
     /**
      * Database column: jobs_id
@@ -112,9 +113,9 @@ public class TempParameterValues implements Serializable {
 
     /**
      * Database column: impacted_by
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String impactedBy;
+    private JsonNode impactedBy;
 
     /**
      * Database column: verified
@@ -219,9 +220,9 @@ public class TempParameterValues implements Serializable {
 
     /**
      * Gets choices
-     * @return String
+     * @return JsonNode
      */
-    public String getChoices() {
+    public JsonNode getChoices() {
         return this.choices;
     }
 
@@ -229,7 +230,7 @@ public class TempParameterValues implements Serializable {
      * Sets choices
      * @param choices the value to set
      */
-    public void setChoices(String choices) {
+    public void setChoices(JsonNode choices) {
         this.choices = choices;
     }
 
@@ -363,9 +364,9 @@ public class TempParameterValues implements Serializable {
 
     /**
      * Gets impacted_by
-     * @return String
+     * @return JsonNode
      */
-    public String getImpactedBy() {
+    public JsonNode getImpactedBy() {
         return this.impactedBy;
     }
 
@@ -373,7 +374,7 @@ public class TempParameterValues implements Serializable {
      * Sets impacted_by
      * @param impactedBy the value to set
      */
-    public void setImpactedBy(String impactedBy) {
+    public void setImpactedBy(JsonNode impactedBy) {
         this.impactedBy = impactedBy;
     }
 

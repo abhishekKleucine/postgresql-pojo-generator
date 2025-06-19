@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: task_schedules
@@ -55,9 +56,9 @@ public class TaskSchedules implements Serializable {
 
     /**
      * Database column: start_date_duration
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String startDateDuration;
+    private JsonNode startDateDuration;
 
     /**
      * Database column: due_date_interval
@@ -67,9 +68,9 @@ public class TaskSchedules implements Serializable {
 
     /**
      * Database column: due_date_duration
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String dueDateDuration;
+    private JsonNode dueDateDuration;
 
     /**
      * Database column: created_at
@@ -183,9 +184,9 @@ public class TaskSchedules implements Serializable {
 
     /**
      * Gets start_date_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getStartDateDuration() {
+    public JsonNode getStartDateDuration() {
         return this.startDateDuration;
     }
 
@@ -193,7 +194,7 @@ public class TaskSchedules implements Serializable {
      * Sets start_date_duration
      * @param startDateDuration the value to set
      */
-    public void setStartDateDuration(String startDateDuration) {
+    public void setStartDateDuration(JsonNode startDateDuration) {
         this.startDateDuration = startDateDuration;
     }
 
@@ -215,9 +216,9 @@ public class TaskSchedules implements Serializable {
 
     /**
      * Gets due_date_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getDueDateDuration() {
+    public JsonNode getDueDateDuration() {
         return this.dueDateDuration;
     }
 
@@ -225,7 +226,7 @@ public class TaskSchedules implements Serializable {
      * Sets due_date_duration
      * @param dueDateDuration the value to set
      */
-    public void setDueDateDuration(String dueDateDuration) {
+    public void setDueDateDuration(JsonNode dueDateDuration) {
         this.dueDateDuration = dueDateDuration;
     }
 

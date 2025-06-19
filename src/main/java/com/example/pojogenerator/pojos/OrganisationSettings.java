@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: organisation_settings
@@ -113,15 +114,15 @@ public class OrganisationSettings implements Serializable {
 
     /**
      * Database column: extras
-     * Type: jsonb(2147483647) DEFAULT: '{}'::jsonb
+     * Type: jsonb DEFAULT: '{}'::jsonb
      */
-    private String extras;
+    private JsonNode extras;
 
     /**
      * Database column: feature_flags
-     * Type: jsonb(2147483647) DEFAULT: '{"metabaseReports": false}'::jsonb
+     * Type: jsonb DEFAULT: '{"metabaseReports": false}'::jsonb
      */
-    private String featureFlags;
+    private JsonNode featureFlags;
 
     /**
      * Default constructor
@@ -355,9 +356,9 @@ public class OrganisationSettings implements Serializable {
 
     /**
      * Gets extras
-     * @return String
+     * @return JsonNode
      */
-    public String getExtras() {
+    public JsonNode getExtras() {
         return this.extras;
     }
 
@@ -365,15 +366,15 @@ public class OrganisationSettings implements Serializable {
      * Sets extras
      * @param extras the value to set
      */
-    public void setExtras(String extras) {
+    public void setExtras(JsonNode extras) {
         this.extras = extras;
     }
 
     /**
      * Gets feature_flags
-     * @return String
+     * @return JsonNode
      */
-    public String getFeatureFlags() {
+    public JsonNode getFeatureFlags() {
         return this.featureFlags;
     }
 
@@ -381,7 +382,7 @@ public class OrganisationSettings implements Serializable {
      * Sets feature_flags
      * @param featureFlags the value to set
      */
-    public void setFeatureFlags(String featureFlags) {
+    public void setFeatureFlags(JsonNode featureFlags) {
         this.featureFlags = featureFlags;
     }
 

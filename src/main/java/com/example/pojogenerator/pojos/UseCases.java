@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: use_cases
@@ -52,9 +53,9 @@ public class UseCases implements Serializable {
 
     /**
      * Database column: metadata
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String metadata;
+    private JsonNode metadata;
 
     /**
      * Database column: archived
@@ -176,9 +177,9 @@ public class UseCases implements Serializable {
 
     /**
      * Gets metadata
-     * @return String
+     * @return JsonNode
      */
-    public String getMetadata() {
+    public JsonNode getMetadata() {
         return this.metadata;
     }
 
@@ -186,7 +187,7 @@ public class UseCases implements Serializable {
      * Sets metadata
      * @param metadata the value to set
      */
-    public void setMetadata(String metadata) {
+    public void setMetadata(JsonNode metadata) {
         this.metadata = metadata;
     }
 

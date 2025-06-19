@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: variations
@@ -58,15 +59,15 @@ public class Variations implements Serializable {
 
     /**
      * Database column: new_details
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String newDetails;
+    private JsonNode newDetails;
 
     /**
      * Database column: old_details
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String oldDetails;
+    private JsonNode oldDetails;
 
     /**
      * Database column: type
@@ -198,9 +199,9 @@ public class Variations implements Serializable {
 
     /**
      * Gets new_details
-     * @return String
+     * @return JsonNode
      */
-    public String getNewDetails() {
+    public JsonNode getNewDetails() {
         return this.newDetails;
     }
 
@@ -208,15 +209,15 @@ public class Variations implements Serializable {
      * Sets new_details
      * @param newDetails the value to set
      */
-    public void setNewDetails(String newDetails) {
+    public void setNewDetails(JsonNode newDetails) {
         this.newDetails = newDetails;
     }
 
     /**
      * Gets old_details
-     * @return String
+     * @return JsonNode
      */
-    public String getOldDetails() {
+    public JsonNode getOldDetails() {
         return this.oldDetails;
     }
 
@@ -224,7 +225,7 @@ public class Variations implements Serializable {
      * Sets old_details
      * @param oldDetails the value to set
      */
-    public void setOldDetails(String oldDetails) {
+    public void setOldDetails(JsonNode oldDetails) {
         this.oldDetails = oldDetails;
     }
 

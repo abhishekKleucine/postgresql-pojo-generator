@@ -2,6 +2,7 @@ package com.example.pojogenerator.pojos;
 
 import java.io.Serializable;
 import java.util.Objects;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * POJO class for table: schedulers
@@ -112,15 +113,15 @@ public class Schedulers implements Serializable {
 
     /**
      * Database column: due_date_duration
-     * Type: jsonb(2147483647)
+     * Type: jsonb
      */
-    private String dueDateDuration;
+    private JsonNode dueDateDuration;
 
     /**
      * Database column: data
-     * Type: jsonb(2147483647) NOT NULL DEFAULT: '{}'::jsonb
+     * Type: jsonb NOT NULL DEFAULT: '{}'::jsonb
      */
-    private String data;
+    private JsonNode data;
 
     /**
      * Database column: is_custom_recurrence
@@ -402,9 +403,9 @@ public class Schedulers implements Serializable {
 
     /**
      * Gets due_date_duration
-     * @return String
+     * @return JsonNode
      */
-    public String getDueDateDuration() {
+    public JsonNode getDueDateDuration() {
         return this.dueDateDuration;
     }
 
@@ -412,15 +413,15 @@ public class Schedulers implements Serializable {
      * Sets due_date_duration
      * @param dueDateDuration the value to set
      */
-    public void setDueDateDuration(String dueDateDuration) {
+    public void setDueDateDuration(JsonNode dueDateDuration) {
         this.dueDateDuration = dueDateDuration;
     }
 
     /**
      * Gets data
-     * @return String
+     * @return JsonNode
      */
-    public String getData() {
+    public JsonNode getData() {
         return this.data;
     }
 
@@ -428,7 +429,7 @@ public class Schedulers implements Serializable {
      * Sets data
      * @param data the value to set
      */
-    public void setData(String data) {
+    public void setData(JsonNode data) {
         this.data = data;
     }
 
