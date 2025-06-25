@@ -68,7 +68,14 @@ public class PojoGenerator {
             int tableCount = 0;
             while (tables.next()) {
                 String tableName = tables.getString("TABLE_NAME");
-                String className = toCamelCase(tableName, true);
+                
+                // Skip problematic tables that cause naming conflicts
+                if ("exceptions".equals(tableName)) {
+                    System.out.println("Skipping table: " + tableName + " (naming conflict with java.lang.Exception)");
+                    continue;
+                }
+                
+                String className = convertTableNameToClassName(tableName);
 
                 Map<String, ColumnInfo> columns = new LinkedHashMap<>();
                 Set<String> primaryKeys = getPrimaryKeys(meta, tableName);
@@ -400,6 +407,26 @@ public class PojoGenerator {
             default:
                 return "String";
         }
+    }
+
+    /**
+     * Convert table name to proper Java class name
+     * Handles pluralization and mapping table naming conventions
+     */
+    private static String convertTableNameToClassName(String tableName) {
+        // Handle mapping tables first (keep as-is, just convert to PascalCase)
+        if (tableName.endsWith("_mapping")) {
+            return toCamelCase(tableName, true);
+        }
+        
+        // Handle regular entity tables (remove trailing 's' if present)
+        String singularName = tableName;
+        if (tableName.endsWith("s") && !tableName.endsWith("ss")) {
+            singularName = tableName.substring(0, tableName.length() - 1);
+        }
+        
+        // Convert to PascalCase
+        return toCamelCase(singularName, true);
     }
 
     private static String toCamelCase(String str, boolean capitalizeFirst) {

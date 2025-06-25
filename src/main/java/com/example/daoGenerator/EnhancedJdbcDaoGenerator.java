@@ -1300,8 +1300,25 @@ public class EnhancedJdbcDaoGenerator {
         return mappings;
     }
     
+    /**
+     * Convert class name to table name using the same logic as PojoGenerator
+     * Handles pluralization and mapping table naming conventions
+     */
     private String convertClassNameToTableName(String className) {
-        return className.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+        // Convert PascalCase to snake_case
+        String tableName = className.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+        
+        // Handle mapping tables (keep as-is)
+        if (tableName.endsWith("_mapping")) {
+            return tableName;
+        }
+        
+        // Handle regular entity tables (add trailing 's' if not present)
+        if (!tableName.endsWith("s") && !tableName.endsWith("ss")) {
+            tableName = tableName + "s";
+        }
+        
+        return tableName;
     }
     
     private String convertFieldNameToColumnName(String fieldName) {
