@@ -13,6 +13,13 @@ public class ChecklistView {
 
     public ChecklistView() {}
 
+    public ChecklistView(Long id, String code, String name, String colorCode) {
+        this.id = id;
+        this.code = code;
+        this.name = name;
+        this.colorCode = colorCode;
+    }
+
     public Long getId() {
         return id;
     }

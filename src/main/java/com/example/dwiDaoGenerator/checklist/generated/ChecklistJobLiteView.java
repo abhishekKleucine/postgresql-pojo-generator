@@ -12,6 +12,12 @@ public class ChecklistJobLiteView {
 
     public ChecklistJobLiteView() {}
 
+    public ChecklistJobLiteView(Long id, String name, String code) {
+        this.id = id;
+        this.name = name;
+        this.code = code;
+    }
+
     public Long getId() {
         return id;
     }

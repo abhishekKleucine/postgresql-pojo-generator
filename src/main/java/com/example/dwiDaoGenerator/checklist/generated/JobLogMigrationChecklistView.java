@@ -13,6 +13,13 @@ public class JobLogMigrationChecklistView {
 
     public JobLogMigrationChecklistView() {}
 
+    public JobLogMigrationChecklistView(Long id, String name, String code, String state) {
+        this.id = id;
+        this.name = name;
+        this.code = code;
+        this.state = state;
+    }
+
     public Long getId() {
         return id;
     }

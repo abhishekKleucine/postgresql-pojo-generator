@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.Collection;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -11,6 +12,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import com.example.pojogenerator.pojos.Checklist;
+import com.example.dwiDaoGenerator.checklist.generated.SpringDataTypes.*;
 
 /**
  * Repository-Driven JDBC implementation for ChecklistDao
@@ -145,23 +147,19 @@ public class JdbcChecklistDao implements ChecklistDao {
 
     @Override
     public Page<Checklist> findAll(Specification specification, Pageable pageable) {
-        MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("specification", specification);
-        params.addValue("pageable", pageable);
-
-        return jdbcTemplate.queryForObject(
-            ChecklistSql.FIND_ALL,
-            params,
-            String.class
-        );
+        // TODO: Implement paged findAll with Specification
+        // This requires dynamic SQL generation based on Specification criteria
+        // For now, return empty page
+        throw new UnsupportedOperationException("Paged findAll with Specification not implemented yet");
     }
 
     @Override
     public List<Checklist> findAllByIdIn(Collection<Long> id, Sort sort) {
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("id", id);
-        params.addValue("sort", sort);
-
+        
+        // TODO: Apply sort parameter to SQL query
+        // For now, use basic query without sorting
         return jdbcTemplate.query(
             ChecklistSql.FIND_ALL_BY_ID_IN,
             params,
@@ -232,7 +230,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.queryForObject(
             ChecklistSql.FIND_BY_STAGE_ID,
             params,
-            String.class
+            (rs, rowNum) -> State.Checklist.valueOf(rs.getString(1))
         );
     }
 
@@ -256,7 +254,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.query(
             ChecklistSql.FIND_BY_STATE_IN_ORDER_BY_STATE_DESC,
             params,
-            rowMapper
+            (rs, rowNum) -> rs.getLong(1)
         );
     }
 
@@ -265,11 +263,12 @@ public class JdbcChecklistDao implements ChecklistDao {
         MapSqlParameterSource params = new MapSqlParameterSource();
         params.addValue("state", state);
 
-        return jdbcTemplate.queryForObject(
+        List<Long> resultList = jdbcTemplate.query(
             ChecklistSql.FIND_BY_STATE_NOT,
             params,
-            String.class
+            (rs, rowNum) -> rs.getLong(1)
         );
+        return new HashSet<>(resultList);
     }
 
     @Override
@@ -280,7 +279,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.queryForObject(
             ChecklistSql.FIND_CHECKLIST_INFO_BY_ID,
             params,
-            String.class
+            (rs, rowNum) -> new JobLogMigrationChecklistView(rs.getLong("id"), rs.getString("name"), rs.getString("code"), rs.getString("state"))
         );
     }
 
@@ -310,7 +309,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.query(
             ChecklistSql.FIND_ALL_CHECKLIST_IDS_FOR_CURRENT_FACILITY_AND_ORGANISATION_BY_OBJECT_TYPE_IN_DATA,
             params,
-            rowMapper
+            (rs, rowNum) -> rs.getLong(1)
         );
     }
 
@@ -322,7 +321,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.query(
             ChecklistSql.GET_ALL_BY_IDS_IN,
             params,
-            rowMapper
+            (rs, rowNum) -> new ChecklistView(rs.getLong("id"), rs.getString("code"), rs.getString("name"), rs.getString("colorCode"))
         );
     }
 
@@ -334,7 +333,7 @@ public class JdbcChecklistDao implements ChecklistDao {
         return jdbcTemplate.queryForObject(
             ChecklistSql.GET_CHECKLIST_JOB_LITE_DTO_BY_ID,
             params,
-            String.class
+            (rs, rowNum) -> new ChecklistJobLiteView(rs.getLong("id"), rs.getString("name"), rs.getString("code"))
         );
     }
 

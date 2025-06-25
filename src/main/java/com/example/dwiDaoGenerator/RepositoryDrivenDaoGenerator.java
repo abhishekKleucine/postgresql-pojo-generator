@@ -360,7 +360,14 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("import java.util.Optional;\n");
         sb.append("import java.util.Set;\n");
         sb.append("import java.util.Collection;\n");
-        sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n\n");
+        sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n");
+        
+        // Add SpringDataTypes imports if needed
+        if (needsSpringDataImports(model)) {
+            sb.append("import com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated.SpringDataTypes.*;\n");
+        }
+        
+        sb.append("\n");
         
         // Interface documentation
         sb.append("/**\n");
@@ -403,13 +410,21 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("import java.util.Map;\n");
         sb.append("import java.util.Optional;\n");
         sb.append("import java.util.Set;\n");
+        sb.append("import java.util.HashSet;\n");
         sb.append("import java.util.Collection;\n");
         sb.append("import org.springframework.dao.EmptyResultDataAccessException;\n");
         sb.append("import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;\n");
         sb.append("import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;\n");
         sb.append("import org.springframework.stereotype.Repository;\n");
         sb.append("import org.springframework.transaction.annotation.Transactional;\n");
-        sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n\n");
+        sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n");
+        
+        // Add SpringDataTypes imports if needed
+        if (needsSpringDataImports(model)) {
+            sb.append("import com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated.SpringDataTypes.*;\n");
+        }
+        
+        sb.append("\n");
         
         // Class documentation
         sb.append("/**\n");
@@ -472,6 +487,14 @@ public class RepositoryDrivenDaoGenerator {
      */
     private void generateMethodImplementationBody(StringBuilder sb, CustomMethod method, DaoGenerationModel model) {
         String returnType = method.getReturnType();
+        String methodName = method.getMethodName();
+        
+        // Handle special cases for dynamic queries and Spring Data types
+        if (isDynamicQuery(method.getSqlQuery()) || isSpringDataMethod(method)) {
+            generateDynamicMethodImplementation(sb, method, model);
+            return;
+        }
+        
         String sqlConstant = model.getEntityName() + "Sql." + 
                            convertMethodNameToConstant(method.getMethodName());
         
@@ -489,21 +512,126 @@ public class RepositoryDrivenDaoGenerator {
         
         // Generate appropriate query execution based on return type
         if (returnType.startsWith("Optional<")) {
-            sb.append("        try {\n");
-            sb.append("            ").append(model.getEntityName()).append(" result = jdbcTemplate.queryForObject(\n");
-            sb.append("                ").append(sqlConstant).append(",\n");
-            if (!signatureParams.isEmpty()) {
-                sb.append("                params,\n");
-            } else {
-                sb.append("                Map.of(),\n");
-            }
-            sb.append("                rowMapper\n");
-            sb.append("            );\n");
-            sb.append("            return Optional.ofNullable(result);\n");
-            sb.append("        } catch (EmptyResultDataAccessException e) {\n");
-            sb.append("            return Optional.empty();\n");
-            sb.append("        }\n");
+            generateOptionalQueryExecution(sb, sqlConstant, signatureParams, model);
         } else if (returnType.startsWith("List<")) {
+            generateListQueryExecution(sb, sqlConstant, signatureParams, returnType, model);
+        } else if (returnType.startsWith("Set<")) {
+            generateSetQueryExecution(sb, sqlConstant, signatureParams, returnType, model);
+        } else if (returnType.equals("void")) {
+            generateUpdateExecution(sb, sqlConstant, signatureParams);
+        } else {
+            generateSingleValueExecution(sb, sqlConstant, signatureParams, returnType);
+        }
+    }
+    
+    /**
+     * Check if method uses Spring Data types
+     */
+    private boolean isSpringDataMethod(CustomMethod method) {
+        String signature = method.getSignature();
+        return signature.contains("Page<") || signature.contains("Pageable") || 
+               signature.contains("Sort") || signature.contains("Specification");
+    }
+    
+    /**
+     * Generate implementation for dynamic queries and Spring Data methods
+     */
+    private void generateDynamicMethodImplementation(StringBuilder sb, CustomMethod method, DaoGenerationModel model) {
+        String methodName = method.getMethodName();
+        String returnType = method.getReturnType();
+        
+        switch (methodName) {
+            case "findAll":
+                if (returnType.startsWith("Page<")) {
+                    generatePagedFindAllImplementation(sb, model);
+                } else {
+                    generateStandardFindAllImplementation(sb, model);
+                }
+                break;
+                
+            case "findAllByIdIn":
+                generateFindAllByIdInImplementation(sb, model);
+                break;
+                
+            default:
+                sb.append("        // TODO: Implement dynamic method - requires custom business logic\n");
+                sb.append("        throw new UnsupportedOperationException(\"Dynamic method not implemented: ").append(methodName).append("\");\n");
+                break;
+        }
+    }
+    
+    /**
+     * Generate paged findAll implementation
+     */
+    private void generatePagedFindAllImplementation(StringBuilder sb, DaoGenerationModel model) {
+        sb.append("        // TODO: Implement paged findAll with Specification\n");
+        sb.append("        // This requires dynamic SQL generation based on Specification criteria\n");
+        sb.append("        // For now, return empty page\n");
+        sb.append("        throw new UnsupportedOperationException(\"Paged findAll with Specification not implemented yet\");\n");
+    }
+    
+    /**
+     * Generate standard findAll implementation
+     */
+    private void generateStandardFindAllImplementation(StringBuilder sb, DaoGenerationModel model) {
+        sb.append("        return jdbcTemplate.query(").append(model.getEntityName()).append("Sql.FIND_ALL, rowMapper);\n");
+    }
+    
+    /**
+     * Generate findAllByIdIn implementation with Sort handling
+     */
+    private void generateFindAllByIdInImplementation(StringBuilder sb, DaoGenerationModel model) {
+        sb.append("        MapSqlParameterSource params = new MapSqlParameterSource();\n");
+        sb.append("        params.addValue(\"id\", id);\n");
+        sb.append("        \n");
+        sb.append("        // TODO: Apply sort parameter to SQL query\n");
+        sb.append("        // For now, use basic query without sorting\n");
+        sb.append("        return jdbcTemplate.query(\n");
+        sb.append("            ").append(model.getEntityName()).append("Sql.FIND_ALL_BY_ID_IN,\n");
+        sb.append("            params,\n");
+        sb.append("            rowMapper\n");
+        sb.append("        );\n");
+    }
+    
+    /**
+     * Generate Optional query execution
+     */
+    private void generateOptionalQueryExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams, DaoGenerationModel model) {
+        sb.append("        try {\n");
+        sb.append("            ").append(model.getEntityName()).append(" result = jdbcTemplate.queryForObject(\n");
+        sb.append("                ").append(sqlConstant).append(",\n");
+        if (!signatureParams.isEmpty()) {
+            sb.append("                params,\n");
+        } else {
+            sb.append("                Map.of(),\n");
+        }
+        sb.append("                rowMapper\n");
+        sb.append("            );\n");
+        sb.append("            return Optional.ofNullable(result);\n");
+        sb.append("        } catch (EmptyResultDataAccessException e) {\n");
+        sb.append("            return Optional.empty();\n");
+        sb.append("        }\n");
+    }
+    
+    /**
+     * Generate List query execution with proper row mapper
+     */
+    private void generateListQueryExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType, DaoGenerationModel model) {
+        // Check if it's a list of view objects or entity objects
+        if (returnType.contains("View") || returnType.contains("Long") || returnType.contains("String")) {
+            // For view objects or primitive types, use appropriate row mapper
+            String rowMapperType = extractRowMapperType(returnType);
+            sb.append("        return jdbcTemplate.query(\n");
+            sb.append("            ").append(sqlConstant).append(",\n");
+            if (!signatureParams.isEmpty()) {
+                sb.append("            params,\n");
+            } else {
+                sb.append("            Map.of(),\n");
+            }
+            sb.append("            ").append(rowMapperType).append("\n");
+            sb.append("        );\n");
+        } else {
+            // For entity objects, use entity row mapper
             sb.append("        return jdbcTemplate.query(\n");
             sb.append("            ").append(sqlConstant).append(",\n");
             if (!signatureParams.isEmpty()) {
@@ -513,17 +641,56 @@ public class RepositoryDrivenDaoGenerator {
             }
             sb.append("            rowMapper\n");
             sb.append("        );\n");
-        } else if (returnType.equals("void")) {
-            sb.append("        jdbcTemplate.update(\n");
+        }
+    }
+    
+    /**
+     * Generate Set query execution
+     */
+    private void generateSetQueryExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType, DaoGenerationModel model) {
+        sb.append("        List<").append(extractGenericType(returnType)).append("> resultList = jdbcTemplate.query(\n");
+        sb.append("            ").append(sqlConstant).append(",\n");
+        if (!signatureParams.isEmpty()) {
+            sb.append("            params,\n");
+        } else {
+            sb.append("            Map.of(),\n");
+        }
+        sb.append("            ").append(extractRowMapperType(returnType)).append("\n");
+        sb.append("        );\n");
+        sb.append("        return new HashSet<>(resultList);\n");
+    }
+    
+    /**
+     * Generate update execution
+     */
+    private void generateUpdateExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams) {
+        sb.append("        jdbcTemplate.update(\n");
+        sb.append("            ").append(sqlConstant).append(",\n");
+        if (!signatureParams.isEmpty()) {
+            sb.append("            params\n");
+        } else {
+            sb.append("            Map.of()\n");
+        }
+        sb.append("        );\n");
+    }
+    
+    /**
+     * Generate single value execution
+     */
+    private void generateSingleValueExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType) {
+        if (returnType.contains("State.") || returnType.contains("View")) {
+            // For enum types and view types, use proper row mapper
+            sb.append("        return jdbcTemplate.queryForObject(\n");
             sb.append("            ").append(sqlConstant).append(",\n");
             if (!signatureParams.isEmpty()) {
-                sb.append("            params\n");
+                sb.append("            params,\n");
             } else {
-                sb.append("            Map.of()\n");
+                sb.append("            Map.of(),\n");
             }
+            sb.append("            ").append(extractRowMapperType(returnType)).append("\n");
             sb.append("        );\n");
         } else {
-            // Single value return
+            // For primitive types, use .class
             sb.append("        return jdbcTemplate.queryForObject(\n");
             sb.append("            ").append(sqlConstant).append(",\n");
             if (!signatureParams.isEmpty()) {
@@ -533,6 +700,39 @@ public class RepositoryDrivenDaoGenerator {
             }
             sb.append("            ").append(getJdbcTypeClass(returnType)).append(".class\n");
             sb.append("        );\n");
+        }
+    }
+    
+    /**
+     * Extract generic type from parameterized type
+     */
+    private String extractGenericType(String parameterizedType) {
+        Pattern pattern = Pattern.compile("<([^>]+)>");
+        Matcher matcher = pattern.matcher(parameterizedType);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return "Object";
+    }
+    
+    /**
+     * Extract appropriate row mapper type based on return type
+     */
+    private String extractRowMapperType(String returnType) {
+        if (returnType.contains("Long")) {
+            return "(rs, rowNum) -> rs.getLong(1)";
+        } else if (returnType.contains("String")) {
+            return "(rs, rowNum) -> rs.getString(1)";
+        } else if (returnType.contains("State.Checklist")) {
+            return "(rs, rowNum) -> State.Checklist.valueOf(rs.getString(1))";
+        } else if (returnType.contains("JobLogMigrationChecklistView")) {
+            return "(rs, rowNum) -> new JobLogMigrationChecklistView(rs.getLong(\"id\"), rs.getString(\"name\"), rs.getString(\"code\"), rs.getString(\"state\"))";
+        } else if (returnType.contains("ChecklistJobLiteView")) {
+            return "(rs, rowNum) -> new ChecklistJobLiteView(rs.getLong(\"id\"), rs.getString(\"name\"), rs.getString(\"code\"))";
+        } else if (returnType.contains("ChecklistView")) {
+            return "(rs, rowNum) -> new ChecklistView(rs.getLong(\"id\"), rs.getString(\"code\"), rs.getString(\"name\"), rs.getString(\"colorCode\"))";
+        } else {
+            return "rowMapper";
         }
     }
     
@@ -1235,6 +1435,7 @@ public class RepositoryDrivenDaoGenerator {
         
         // Generate constructors
         sb.append("    public ").append(viewType).append("() {}\n\n");
+        generateViewConstructor(sb, viewType);
         
         // Generate getters and setters
         generateViewGettersSetters(sb, viewType);
@@ -1276,6 +1477,46 @@ public class RepositoryDrivenDaoGenerator {
                 // Generic view with common fields
                 sb.append("    private Long id;\n");
                 sb.append("    private String name;\n\n");
+                break;
+        }
+    }
+    
+    /**
+     * Generate parameterized constructor for view class
+     */
+    private void generateViewConstructor(StringBuilder sb, String viewType) {
+        switch (viewType) {
+            case "ChecklistView":
+                sb.append("    public ").append(viewType).append("(Long id, String code, String name, String colorCode) {\n");
+                sb.append("        this.id = id;\n");
+                sb.append("        this.code = code;\n");
+                sb.append("        this.name = name;\n");
+                sb.append("        this.colorCode = colorCode;\n");
+                sb.append("    }\n\n");
+                break;
+                
+            case "ChecklistJobLiteView":
+                sb.append("    public ").append(viewType).append("(Long id, String name, String code) {\n");
+                sb.append("        this.id = id;\n");
+                sb.append("        this.name = name;\n");
+                sb.append("        this.code = code;\n");
+                sb.append("    }\n\n");
+                break;
+                
+            case "JobLogMigrationChecklistView":
+                sb.append("    public ").append(viewType).append("(Long id, String name, String code, String state) {\n");
+                sb.append("        this.id = id;\n");
+                sb.append("        this.name = name;\n");
+                sb.append("        this.code = code;\n");
+                sb.append("        this.state = state;\n");
+                sb.append("    }\n\n");
+                break;
+                
+            default:
+                sb.append("    public ").append(viewType).append("(Long id, String name) {\n");
+                sb.append("        this.id = id;\n");
+                sb.append("        this.name = name;\n");
+                sb.append("    }\n\n");
                 break;
         }
     }
@@ -1696,6 +1937,20 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("            return java.util.Collections.emptyIterator();\n");
         sb.append("        }\n");
         sb.append("    }\n");
+    }
+
+    /**
+     * Check if SpringDataTypes imports are needed
+     */
+    private boolean needsSpringDataImports(DaoGenerationModel model) {
+        for (CustomMethod method : model.getRepositoryDoc().getCustomMethods()) {
+            String signature = method.getSignature();
+            if (signature.contains("Page<") || signature.contains("Pageable") || 
+                signature.contains("Sort") || signature.contains("Specification")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void writeToFile(String fileName, String content) throws IOException {

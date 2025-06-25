@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Collection;
 import com.example.pojogenerator.pojos.Checklist;
+import com.example.dwiDaoGenerator.checklist.generated.SpringDataTypes.*;
 
 /**
  * Repository-Driven DAO interface for Checklist entity
