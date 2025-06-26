@@ -428,18 +428,18 @@ public class RepositoryDrivenDaoGenerator {
         
         // Class documentation
         sb.append("/**\n");
-        sb.append(" * Repository-Driven JDBC implementation for ").append(model.getEntityName()).append("Dao\n");
+        sb.append(" * Repository-Driven implementation for ").append(model.getEntityName()).append("Dao\n");
         sb.append(" * Generated with complete SQL implementations from documentation\n");
         sb.append(" */\n");
         sb.append("@Repository\n");
         sb.append("@Transactional(rollbackFor = Exception.class)\n");
-        sb.append("public class Jdbc").append(model.getEntityName()).append("Dao implements ").append(model.getEntityName()).append("Dao {\n\n");
+        sb.append("public class ").append(model.getEntityName()).append("DaoImpl implements ").append(model.getEntityName()).append("Dao {\n\n");
         
         // Fields and constructor
         sb.append("    private final NamedParameterJdbcTemplate jdbcTemplate;\n");
         sb.append("    private final ").append(model.getEntityName()).append("RowMapper rowMapper;\n\n");
         
-        sb.append("    public Jdbc").append(model.getEntityName()).append("Dao(NamedParameterJdbcTemplate jdbcTemplate) {\n");
+        sb.append("    public ").append(model.getEntityName()).append("DaoImpl(NamedParameterJdbcTemplate jdbcTemplate) {\n");
         sb.append("        this.jdbcTemplate = jdbcTemplate;\n");
         sb.append("        this.rowMapper = new ").append(model.getEntityName()).append("RowMapper();\n");
         sb.append("    }\n\n");
@@ -452,8 +452,8 @@ public class RepositoryDrivenDaoGenerator {
         
         sb.append("}\n");
         
-        writeToFile(outputDir + "/Jdbc" + model.getEntityName() + "Dao.java", sb.toString());
-        System.out.println("✅ Generated Jdbc" + model.getEntityName() + "Dao.java implementation");
+        writeToFile(outputDir + "/" + model.getEntityName() + "DaoImpl.java", sb.toString());
+        System.out.println("✅ Generated " + model.getEntityName() + "DaoImpl.java implementation");
     }
     
     /**

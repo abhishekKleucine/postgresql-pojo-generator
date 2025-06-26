@@ -93,6 +93,94 @@ SpringDataTypes.java
 
 ---
 
+## 🚨 **Critical Compilation Issues & Fixes**
+
+### **🔥 CRITICAL: Row Mapper Type Detection Order**
+**Problem:** View types with substring matches cause wrong row mapper generation
+**Example Error:**
+```
+incompatible types: inference variable T has incompatible bounds
+    equality constraints: java.lang.String
+    lower bounds: JobLogMigrationChecklistView,java.lang.Object
+```
+
+**Root Cause:** `JobLogMigrationChecklistView` contains `ChecklistView` substring, causing wrong pattern match
+
+**✅ SOLUTION:** Fix `extractRowMapperType()` method order (MOST SPECIFIC FIRST):
+```java
+private String extractRowMapperType(String returnType) {
+    // ORDER MATTERS! Most specific patterns first
+    if (returnType.contains("JobLogMigrationChecklistView")) {
+        return "(rs, rowNum) -> new JobLogMigrationChecklistView(rs.getLong(\"id\"), rs.getString(\"name\"), rs.getString(\"code\"), rs.getString(\"state\"))";
+    } else if (returnType.contains("ChecklistJobLiteView")) {
+        return "(rs, rowNum) -> new ChecklistJobLiteView(rs.getLong(\"id\"), rs.getString(\"name\"), rs.getString(\"code\"))";
+    } else if (returnType.contains("ChecklistView")) {
+        return "(rs, rowNum) -> new ChecklistView(rs.getLong(\"id\"), rs.getString(\"code\"), rs.getString(\"name\"), rs.getString(\"colorCode\"))";
+    }
+    // ... other patterns
+}
+```
+
+### **🔥 CRITICAL: Spring Data Types Import Issues**
+**Problem:** Missing SpringDataTypes imports when methods use Page, Pageable, Sort, Specification
+**Example Error:**
+```
+cannot find symbol: class Page
+cannot find symbol: class Pageable
+```
+
+**✅ SOLUTION:** Add smart import detection:
+```java
+private boolean needsSpringDataImports(DaoGenerationModel model) {
+    for (CustomMethod method : model.getRepositoryDoc().getCustomMethods()) {
+        String signature = method.getSignature();
+        if (signature.contains("Page<") || signature.contains("Pageable") || 
+            signature.contains("Sort") || signature.contains("Specification")) {
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+### **🔥 CRITICAL: View Type vs Single Value Execution**
+**Problem:** Methods returning view types use wrong execution pattern
+**Example Error:**
+```
+return jdbcTemplate.queryForObject(sql, params, String.class); // WRONG for view types
+```
+
+**✅ SOLUTION:** Enhanced single value execution detection:
+```java
+private void generateSingleValueExecution(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType) {
+    if (returnType.contains("State.") || returnType.contains("View")) {
+        // For enum types and view types, use proper row mapper
+        sb.append("        return jdbcTemplate.queryForObject(\n");
+        sb.append("            ").append(sqlConstant).append(",\n");
+        if (!signatureParams.isEmpty()) {
+            sb.append("            params,\n");
+        } else {
+            sb.append("            Map.of(),\n");
+        }
+        sb.append("            ").append(extractRowMapperType(returnType)).append("\n");
+        sb.append("        );\n");
+    } else {
+        // For primitive types, use .class
+        sb.append("        return jdbcTemplate.queryForObject(\n");
+        sb.append("            ").append(sqlConstant).append(",\n");
+        if (!signatureParams.isEmpty()) {
+            sb.append("            params,\n");
+        } else {
+            sb.append("            Map.of(),\n");
+        }
+        sb.append("            ").append(getJdbcTypeClass(returnType)).append(".class\n");
+        sb.append("        );\n");
+    }
+}
+```
+
+---
+
 ## ⚠️ **Common Issues & Solutions**
 
 ### **Issue 1: Parameter Mapping Errors**
@@ -228,36 +316,205 @@ psql -h localhost -U postgres -d qa_ -c "\d your_table_name"
 
 ---
 
+## 🔧 **Advanced Customization Patterns**
+
+### **Pattern 1: Complex View Type Hierarchies**
+When you have multiple view types with overlapping names:
+
+```java
+// WRONG ORDER (will cause substring matching issues):
+if (returnType.contains("ChecklistView")) { ... }
+if (returnType.contains("JobLogMigrationChecklistView")) { ... }
+
+// CORRECT ORDER (most specific first):
+if (returnType.contains("JobLogMigrationChecklistView")) { ... }
+if (returnType.contains("ChecklistJobLiteView")) { ... }
+if (returnType.contains("ChecklistView")) { ... }
+```
+
+### **Pattern 2: Business Logic Parameter Substitution**
+Real example from Checklist entity:
+
+```java
+private String applyChecklistSpecificParameterRules(String sql, String methodName, List<String> paramNames) {
+    switch (methodName) {
+        case "updateChecklistDuringRecall":
+            // Business rule: both created_by and modified_by use userId
+            return sql.replace("created_by = ?", "created_by = :userId")
+                     .replace("modified_by = ?", "modified_by = :userId")
+                     .replace("WHERE id = ?", "WHERE id = :checklistId");
+                     
+        case "findAllChecklistIdsForCurrentFacilityAndOrganisationByObjectTypeInData":
+            // Complex multi-parameter mapping with business logic
+            return sql.replace("(cfm.facilities_id = ? OR", "(cfm.facilities_id = :facilityId OR")
+                     .replace("c.organisations_id = ?", "c.organisations_id = :organisationId")
+                     .replace("p.data->>'objectTypeId'= ?", "p.data->>'objectTypeId' = :objectTypeId")
+                     .replace("c.archived = ?", "c.archived = :archived")
+                     .replace("c.use_cases_id = ?", "c.use_cases_id = :useCaseId")
+                     .replace("CAST(? as varchar)", "CAST(:name as varchar)")
+                     .replace("|| ? ||", "|| :name ||");
+                     
+        default:
+            return convertPositionalToNamedParameters(sql, paramNames);
+    }
+}
+```
+
+### **Pattern 3: Multi-Entity Relationship Handling**
+For entities with complex foreign key relationships:
+
+```java
+// Add to generateViewFields() method for entity-specific view fields
+switch (viewType) {
+    case "TaskExecutionView":
+        sb.append("    private Long taskId;\n");
+        sb.append("    private Long executionId;\n");
+        sb.append("    private String taskName;\n");
+        sb.append("    private String executionStatus;\n");
+        sb.append("    private Long assigneeId;\n");
+        sb.append("    private String assigneeName;\n\n");
+        break;
+        
+    case "JobAnnotationView":
+        sb.append("    private Long jobId;\n");
+        sb.append("    private Long annotationId;\n");
+        sb.append("    private String annotationType;\n");
+        sb.append("    private String annotationText;\n");
+        sb.append("    private List<String> mediaUrls;\n\n");
+        break;
+}
+```
+
+### **Pattern 4: Dynamic Query Handling**
+For methods that require dynamic SQL generation:
+
+```java
+private void generateDynamicMethodImplementation(StringBuilder sb, CustomMethod method, DaoGenerationModel model) {
+    String methodName = method.getMethodName();
+    
+    switch (methodName) {
+        case "findAllWithFilters":
+            sb.append("        // Dynamic query with filters\n");
+            sb.append("        StringBuilder sqlBuilder = new StringBuilder(").append(model.getEntityName()).append("Sql.FIND_ALL_BASE);\n");
+            sb.append("        MapSqlParameterSource params = new MapSqlParameterSource();\n");
+            sb.append("        \n");
+            sb.append("        // Add dynamic WHERE clauses based on non-null parameters\n");
+            sb.append("        if (status != null) {\n");
+            sb.append("            sqlBuilder.append(\" AND status = :status\");\n");
+            sb.append("            params.addValue(\"status\", status);\n");
+            sb.append("        }\n");
+            sb.append("        \n");
+            sb.append("        return jdbcTemplate.query(sqlBuilder.toString(), params, rowMapper);\n");
+            break;
+            
+        default:
+            sb.append("        throw new UnsupportedOperationException(\"Dynamic method not implemented: ").append(methodName).append("\");\n");
+            break;
+    }
+}
+```
+
+---
+
 ## 📞 **Support & Troubleshooting**
 
-### **Debug Mode:**
-Add debug logging to see what's happening:
+### **🔍 Compilation Error Patterns & Solutions**
+
+#### **Error Pattern 1: Type Inference Issues**
+```
+incompatible types: inference variable T has incompatible bounds
+    equality constraints: java.lang.String
+    lower bounds: SomeView,java.lang.Object
+```
+**Solution:** Check `extractRowMapperType()` method order - ensure most specific view types are checked first.
+
+#### **Error Pattern 2: Missing Constructor**
+```
+constructor SomeView in class SomeView cannot be applied to given types
+```
+**Solution:** Verify view class constructor matches the row mapper lambda parameters.
+
+#### **Error Pattern 3: Import Resolution**
+```
+cannot find symbol: class Page
+cannot find symbol: class Specification
+```
+**Solution:** Ensure `needsSpringDataImports()` returns true and SpringDataTypes.java is generated.
+
+### **🐛 Debug Mode:**
+Add comprehensive debug logging:
 ```java
 System.out.println("🔍 Processing method: " + methodName);
 System.out.println("📊 SQL: " + sqlQuery);
 System.out.println("🎯 Parameters: " + paramNames);
+System.out.println("🔄 Return type: " + returnType);
+System.out.println("🎭 Row mapper: " + extractRowMapperType(returnType));
 ```
 
-### **Common Commands:**
+### **🛠️ Common Commands:**
 ```bash
-# Recompile after changes:
+# Full clean and recompile:
 mvn clean compile
 
-# Check database connectivity:
+# Check specific compilation errors:
+mvn compile 2>&1 | grep -A 5 -B 5 "ERROR"
+
+# Database connectivity test:
 psql -h localhost -U postgres -d qa_ -c "SELECT 1"
 
 # Verify table structure:
 psql -h localhost -U postgres -d qa_ -c "\d your_table_name"
 
-# Clean generated files:
+# Clean generated files for specific entity:
 rm -rf src/main/java/com/example/dwiDaoGenerator/yourentity/generated/*
+
+# Check generated file count:
+find src/main/java/com/example/dwiDaoGenerator/*/generated/ -name "*.java" | wc -l
 ```
 
-### **When to Add Custom Rules:**
-- Complex business logic in SQL parameters
-- Special audit field handling
-- Multi-table join parameter mapping
-- Legacy compatibility requirements
+### **🚨 When to Add Custom Rules:**
+- **Complex business logic** in SQL parameters (audit fields, multi-user operations)
+- **Special audit field handling** (created_by, modified_by using same parameter)
+- **Multi-table join parameter mapping** (facility + organization + object type filters)
+- **Legacy compatibility requirements** (old column names, deprecated fields)
+- **JSON field processing** (PostgreSQL JSONB operations, casting)
+- **Dynamic query requirements** (optional filters, pagination, sorting)
+
+### **📋 Pre-Generation Checklist:**
+```bash
+# 1. Verify database connection
+psql -h localhost -U postgres -d qa_ -c "\l" | grep qa_
+
+# 2. Check table exists
+psql -h localhost -U postgres -d qa_ -c "\dt" | grep your_table_name
+
+# 3. Verify POJO exists and compiles
+javac -cp "target/classes" src/main/java/com/example/pojogenerator/pojos/YourEntity.java
+
+# 4. Check repository documentation format
+grep -E "#### Method:|```yaml" repository_documents/repository_docs/YourEntityRepositorydoc.md
+
+# 5. Ensure project compiles before generation
+mvn compile -q
+```
+
+### **🔧 Post-Generation Validation:**
+```bash
+# 1. Check all 9 files generated
+ls src/main/java/com/example/dwiDaoGenerator/yourentity/generated/ | wc -l
+
+# 2. Verify no compilation errors
+mvn compile 2>&1 | grep -c "ERROR"
+
+# 3. Check method count in generated DAO
+grep -c "public.*(" src/main/java/com/example/dwiDaoGenerator/yourentity/generated/JdbcYourEntityDao.java
+
+# 4. Validate SQL constants
+grep -c "public static final String" src/main/java/com/example/dwiDaoGenerator/yourentity/generated/YourEntitySql.java
+
+# 5. Check view class constructors
+grep -c "public.*View(" src/main/java/com/example/dwiDaoGenerator/yourentity/generated/*View.java
+```
 
 ---
 
@@ -272,6 +529,128 @@ A successful DAO generation should result in:
 
 ---
 
+## 🚀 **Quick Reference & Troubleshooting Flowchart**
+
+### **⚡ Quick Start (Copy-Paste Ready)**
+```bash
+# 1. Navigate to project
+cd /home/leucine/eclipse-workspace/postgresConnect
+
+# 2. Clean compile
+mvn clean compile
+
+# 3. Update generator main method (edit RepositoryDrivenDaoGenerator.java):
+# generator.generateRepositoryDrivenDao("your_table", "YourEntity", "YourEntityRepositorydoc.md");
+
+# 4. Run generator
+java -cp "target/classes:$(find ~/.m2/repository -name "*.jar" | tr '\n' ':')" com.example.dwiDaoGenerator.RepositoryDrivenDaoGenerator
+
+# 5. Verify compilation
+mvn compile
+```
+
+### **🔄 Troubleshooting Flowchart**
+
+```
+Generation Failed?
+├── Database Connection Error?
+│   ├── Check: psql -h localhost -U postgres -d qa_ -c "SELECT 1"
+│   └── Fix: Update DB_URL, DB_USER, DB_PASS in generator
+│
+├── POJO Not Found?
+│   ├── Check: ls src/main/java/com/example/pojogenerator/pojos/YourEntity.java
+│   └── Fix: Run PojoGenerator first or verify entity name
+│
+├── Repository Doc Missing?
+│   ├── Check: ls repository_documents/repository_docs/YourEntityRepositorydoc.md
+│   └── Fix: Create documentation or verify filename
+│
+└── Table Not Found?
+    ├── Check: psql -h localhost -U postgres -d qa_ -c "\dt" | grep your_table
+    └── Fix: Verify table name or create table
+
+Compilation Failed?
+├── Type Inference Error (View types)?
+│   ├── Symptom: "incompatible types: inference variable T"
+│   └── Fix: Reorder extractRowMapperType() - most specific first
+│
+├── Missing Import Error?
+│   ├── Symptom: "cannot find symbol: class Page"
+│   └── Fix: Check needsSpringDataImports() logic
+│
+├── Constructor Error?
+│   ├── Symptom: "constructor cannot be applied to given types"
+│   └── Fix: Verify view class constructor matches row mapper
+│
+└── Parameter Mapping Error?
+    ├── Symptom: SQL parameters don't match method signature
+    └── Fix: Add entity-specific parameter rules
+```
+
+### **📊 Success Indicators**
+```bash
+# ✅ All files generated (should return 9)
+ls src/main/java/com/example/dwiDaoGenerator/yourentity/generated/ | wc -l
+
+# ✅ Zero compilation errors (should return 0)
+mvn compile 2>&1 | grep -c "ERROR"
+
+# ✅ All methods implemented (should be 20+)
+grep -c "public.*(" src/main/java/com/example/dwiDaoGenerator/yourentity/generated/JdbcYourEntityDao.java
+
+# ✅ SQL constants generated (should be 15+)
+grep -c "public static final String" src/main/java/com/example/dwiDaoGenerator/yourentity/generated/YourEntitySql.java
+```
+
+### **🎯 Entity-Specific Quick Configs**
+
+#### **For Checklist Entity:**
+```java
+generator.generateRepositoryDrivenDao("checklists", "Checklist", "ChecklistRepositorydoc.md");
+```
+
+#### **For Task Entity:**
+```java
+generator.generateRepositoryDrivenDao("tasks", "Task", "TaskRepositorydoc.md");
+```
+
+#### **For Job Entity:**
+```java
+generator.generateRepositoryDrivenDao("jobs", "Job", "JobRepositorydoc.md");
+```
+
+#### **For User Entity:**
+```java
+generator.generateRepositoryDrivenDao("users", "User", "UserRepositorydoc.md");
+```
+
+### **🔧 Emergency Fixes**
+
+#### **Fix 1: Row Mapper Order Issue**
+```java
+// In extractRowMapperType(), ensure this order:
+if (returnType.contains("JobLogMigrationEntityView")) { ... }      // Most specific
+else if (returnType.contains("EntityJobLiteView")) { ... }         // Medium specific  
+else if (returnType.contains("EntityView")) { ... }                // Least specific
+```
+
+#### **Fix 2: Missing SpringData Imports**
+```java
+// In generateDaoInterface(), add this check:
+if (needsSpringDataImports(model)) {
+    sb.append("import com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated.SpringDataTypes.*;\n");
+}
+```
+
+#### **Fix 3: Parameter Mapping Business Rules**
+```java
+// Add to applyMethodSpecificParameterRules():
+case "YourEntity":
+    return applyYourEntitySpecificParameterRules(sql, methodName, paramNames);
+```
+
+---
+
 ## 📚 **Next Steps After Generation**
 
 1. **Integration Testing:** Test generated DAO in your application
@@ -281,5 +660,32 @@ A successful DAO generation should result in:
 5. **Deployment:** Include generated files in your build pipeline
 
 ---
+
+## 🏆 **Expert Tips**
+
+### **💡 Pro Tips for Complex Entities:**
+- **Always test with the most complex entity first** (e.g., Checklist with 15+ custom methods)
+- **Use entity-specific parameter rules** for business logic complexity
+- **Generate view classes automatically** - don't create them manually
+- **Leverage state enums** for type-safe status management
+- **Test compilation after each entity** to catch issues early
+
+### **⚠️ Common Pitfalls to Avoid:**
+- **Don't manually edit generated files** - they'll be overwritten
+- **Don't skip the pre-generation checklist** - it saves debugging time
+- **Don't ignore parameter mapping errors** - they cause runtime failures
+- **Don't forget to update imports** when adding Spring Data types
+- **Don't use generic view names** - be specific to avoid conflicts
+
+### **🎯 Performance Optimization:**
+- **Add database indexes** for frequently queried columns
+- **Use appropriate fetch sizes** for large result sets
+- **Consider connection pooling** for high-throughput applications
+- **Monitor SQL execution plans** for complex queries
+- **Cache frequently accessed data** at the service layer
+
+---
+
+**🎉 Congratulations!** You now have a complete, battle-tested guide for generating production-ready DAO packages. The generator handles the complexity so you can focus on business logic!
 
 **Remember:** The generator is designed to create a complete, production-ready DAO ecosystem with minimal manual intervention. Focus on getting the input files (POJO, documentation, database schema) correct, and the generator will handle the rest!

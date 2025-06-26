@@ -15,17 +15,17 @@ import com.example.pojogenerator.pojos.Checklist;
 import com.example.dwiDaoGenerator.checklist.generated.SpringDataTypes.*;
 
 /**
- * Repository-Driven JDBC implementation for ChecklistDao
+ * Repository-Driven implementation for ChecklistDao
  * Generated with complete SQL implementations from documentation
  */
 @Repository
 @Transactional(rollbackFor = Exception.class)
-public class JdbcChecklistDao implements ChecklistDao {
+public class ChecklistDaoImpl implements ChecklistDao {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
     private final ChecklistRowMapper rowMapper;
 
-    public JdbcChecklistDao(NamedParameterJdbcTemplate jdbcTemplate) {
+    public ChecklistDaoImpl(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
         this.rowMapper = new ChecklistRowMapper();
     }
