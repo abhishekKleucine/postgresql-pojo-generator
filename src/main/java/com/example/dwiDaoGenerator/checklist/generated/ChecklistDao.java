@@ -5,7 +5,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Collection;
 import com.example.pojogenerator.pojos.Checklist;
-import com.example.dwiDaoGenerator.checklist.generated.SpringDataTypes.*;
+import com.example.dwiDaoGenerator.shared.PaginationTypes.*;
 
 /**
  * Repository-Driven DAO interface for Checklist entity
@@ -23,7 +23,7 @@ public interface ChecklistDao {
     long count();
 
     // Custom methods from repository documentation
-    Page<Checklist> findAll(Specification specification, Pageable pageable);
+    PageResult<Checklist> findAll(FilterCriteria specification, PageRequest pageable);
     List<Checklist> findAllByIdIn(Collection<Long> id, Sort sort);
     Optional<Checklist> findByTaskId(Long taskId);
     void updateState(State.Checklist state, Long checklistId);

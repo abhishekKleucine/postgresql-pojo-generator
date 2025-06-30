@@ -14,7 +14,7 @@ import java.util.regex.Pattern;
  * Handles all table types: single-ID, composite-key, no-primary-key, and custom-key tables
  * Generates appropriate DAO methods based on actual table structure
  */
-public class EnhancedJdbcDaoGenerator {
+public class BasicDaoGenerator {
     
     private final JdbcDaoGeneratorConfig config;
     
@@ -25,14 +25,14 @@ public class EnhancedJdbcDaoGenerator {
     private static final String DEFAULT_POJO_PACKAGE = "com.example.pojogenerator.pojos";
     private static final String DEFAULT_DAO_PACKAGE = "com.example.daoGenerator.dao";
     
-    public EnhancedJdbcDaoGenerator() {
+    public BasicDaoGenerator() {
         this.config = new JdbcDaoGeneratorConfig();
     }
     
     public static void main(String[] args) {
         System.out.println("Starting Enhanced JDBC DAO Generator...");
         
-        EnhancedJdbcDaoGenerator generator = new EnhancedJdbcDaoGenerator();
+        BasicDaoGenerator generator = new BasicDaoGenerator();
         generator.generateAllDaos();
         
         System.out.println("Enhanced DAO generation completed!");

@@ -3,21 +3,22 @@ package com.example.dwiDaoGenerator.checklist.generated;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import org.springframework.jdbc.core.RowMapper;
 import com.example.pojogenerator.pojos.Checklist;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Enhanced row mapper for Checklist entity
- * Generated with complete field mapping for all Java types
+ * Pure Java row mapper for Checklist entity
+ * Generated with complete field mapping - No Spring dependencies
  */
-public class ChecklistRowMapper implements RowMapper<Checklist> {
+public class ChecklistRowMapper {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Override
-    public Checklist mapRow(ResultSet rs, int rowNum) throws SQLException {
+    /**
+     * Map ResultSet row to Checklist entity
+     */
+    public Checklist mapRow(ResultSet rs) throws SQLException {
         Checklist entity = new Checklist();
 
         entity.setReleasedAt(rs.getLong("released_at"));
@@ -46,6 +47,9 @@ public class ChecklistRowMapper implements RowMapper<Checklist> {
         return entity;
     }
 
+    /**
+     * Parse JSON string to JsonNode
+     */
     private JsonNode parseJsonNode(String json) {
         if (json == null || json.trim().isEmpty()) {
             return null;

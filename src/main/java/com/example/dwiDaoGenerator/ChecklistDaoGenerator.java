@@ -10,24 +10,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Repository-Driven DAO Generator
+ * Checklist DAO Generator
  * 
- * Combines the best of both worlds:
- * 1. Database introspection (from EnhancedJdbcDaoGenerator)
- * 2. Repository documentation parsing (enhanced from ChecklistDwiGenerator)
- * 3. Complete method implementation with proper SQL
+ * Specialized Pure JDBC DAO generator for Checklist entity:
+ * 1. Database introspection for Checklist table
+ * 2. Repository documentation parsing from ChecklistRepositorydoc.md
+ * 3. Complete Pure JDBC implementation with manual resource management
  * 
  * Inputs:
- * - Table name and schema (database connection)
- * - POJO class (existing generated POJO)
- * - Repository documentation (markdown file)
+ * - Checklist table schema (database connection)
+ * - Checklist POJO class
+ * - ChecklistRepositorydoc.md documentation
  * 
  * Outputs:
- * - Complete DAO with custom methods from documentation
- * - Proper SQL implementation
- * - Full Spring Boot integration
+ * - Complete Pure JDBC DAO with 15+ custom methods
+ * - Positional parameter SQL queries
+ * - Manual transaction management
  */
-public class RepositoryDrivenDaoGenerator {
+public class ChecklistDaoGenerator {
     
     // Database configuration
     private static final String DB_URL = "jdbc:postgresql://localhost:5432/qa_";
@@ -41,9 +41,9 @@ public class RepositoryDrivenDaoGenerator {
     private static final String OUTPUT_BASE_PATH = "src/main/java/com/example/dwiDaoGenerator/";
     
     public static void main(String[] args) {
-        System.out.println("🚀 Starting Repository-Driven DAO Generator...");
+        System.out.println("🚀 Starting Checklist DAO Generator...");
         
-        RepositoryDrivenDaoGenerator generator = new RepositoryDrivenDaoGenerator();
+        ChecklistDaoGenerator generator = new ChecklistDaoGenerator();
         
         // Example: Generate DAO for Checklist
         generator.generateRepositoryDrivenDao(
@@ -52,7 +52,7 @@ public class RepositoryDrivenDaoGenerator {
             "ChecklistRepositorydoc.md"  // repository doc file
         );
         
-        System.out.println("✅ Repository-Driven DAO generation completed!");
+        System.out.println("✅ Checklist DAO generation completed!");
     }
     
     /**
@@ -343,7 +343,7 @@ public class RepositoryDrivenDaoGenerator {
         // Generate supporting components automatically
         generateViewClasses(model, outputDir);
         generateStateEnums(model, outputDir);
-        generateSpringDataTypes(model, outputDir);
+        // Note: Using shared PaginationTypes instead of entity-specific DataTypes
         
         System.out.println("✅ Generated complete DAO package with all supporting files");
     }
@@ -362,9 +362,9 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("import java.util.Collection;\n");
         sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n");
         
-        // Add SpringDataTypes imports if needed
-        if (needsSpringDataImports(model)) {
-            sb.append("import com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated.SpringDataTypes.*;\n");
+        // Add PaginationTypes imports if needed
+        if (needsPaginationImports(model)) {
+            sb.append("import com.example.dwiDaoGenerator.shared.PaginationTypes.*;\n");
         }
         
         sb.append("\n");
@@ -406,42 +406,57 @@ public class RepositoryDrivenDaoGenerator {
         
         // Package and imports
         sb.append("package com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated;\n\n");
+        sb.append("import java.sql.Connection;\n");
+        sb.append("import java.sql.PreparedStatement;\n");
+        sb.append("import java.sql.ResultSet;\n");
+        sb.append("import java.sql.SQLException;\n");
+        sb.append("import java.sql.Statement;\n");
+        sb.append("import java.sql.Array;\n");
         sb.append("import java.util.List;\n");
-        sb.append("import java.util.Map;\n");
+        sb.append("import java.util.ArrayList;\n");
         sb.append("import java.util.Optional;\n");
         sb.append("import java.util.Set;\n");
         sb.append("import java.util.HashSet;\n");
         sb.append("import java.util.Collection;\n");
-        sb.append("import org.springframework.dao.EmptyResultDataAccessException;\n");
-        sb.append("import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;\n");
-        sb.append("import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;\n");
-        sb.append("import org.springframework.stereotype.Repository;\n");
-        sb.append("import org.springframework.transaction.annotation.Transactional;\n");
+        sb.append("import java.util.Map;\n");
+        sb.append("import java.util.HashMap;\n");
+        sb.append("import javax.sql.DataSource;\n");
         sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n");
         
-        // Add SpringDataTypes imports if needed
-        if (needsSpringDataImports(model)) {
-            sb.append("import com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated.SpringDataTypes.*;\n");
+        // Add PaginationTypes imports if needed
+        if (needsPaginationImports(model)) {
+            sb.append("import com.example.dwiDaoGenerator.shared.PaginationTypes.*;\n");
+        }
+        
+        // Add JSON imports if needed
+        boolean needsJsonImports = model.getPojoMetadata().getFields().values().stream()
+            .anyMatch(field -> field.getJavaType().contains("JsonNode"));
+        if (needsJsonImports) {
+            sb.append("import com.fasterxml.jackson.databind.JsonNode;\n");
+            sb.append("import com.fasterxml.jackson.databind.ObjectMapper;\n");
         }
         
         sb.append("\n");
         
         // Class documentation
         sb.append("/**\n");
-        sb.append(" * Repository-Driven implementation for ").append(model.getEntityName()).append("Dao\n");
-        sb.append(" * Generated with complete SQL implementations from documentation\n");
+        sb.append(" * Pure JDBC implementation for ").append(model.getEntityName()).append("Dao\n");
+        sb.append(" * Generated with Pure JDBC implementation from documentation\n");
+        sb.append(" * No Spring dependencies - uses manual resource management\n");
         sb.append(" */\n");
-        sb.append("@Repository\n");
-        sb.append("@Transactional(rollbackFor = Exception.class)\n");
         sb.append("public class ").append(model.getEntityName()).append("DaoImpl implements ").append(model.getEntityName()).append("Dao {\n\n");
         
         // Fields and constructor
-        sb.append("    private final NamedParameterJdbcTemplate jdbcTemplate;\n");
-        sb.append("    private final ").append(model.getEntityName()).append("RowMapper rowMapper;\n\n");
+        sb.append("    private final DataSource dataSource;\n");
         
-        sb.append("    public ").append(model.getEntityName()).append("DaoImpl(NamedParameterJdbcTemplate jdbcTemplate) {\n");
-        sb.append("        this.jdbcTemplate = jdbcTemplate;\n");
-        sb.append("        this.rowMapper = new ").append(model.getEntityName()).append("RowMapper();\n");
+        // Add JSON mapper if needed
+        if (needsJsonImports) {
+            sb.append("    private final ObjectMapper objectMapper = new ObjectMapper();\n");
+        }
+        sb.append("\n");
+        
+        sb.append("    public ").append(model.getEntityName()).append("DaoImpl(DataSource dataSource) {\n");
+        sb.append("        this.dataSource = dataSource;\n");
         sb.append("    }\n\n");
         
         // Generate standard CRUD implementations
@@ -463,11 +478,7 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("    // Custom method implementations from repository documentation\n\n");
         
         for (CustomMethod method : model.getRepositoryDoc().getCustomMethods()) {
-            // Add transaction annotation if required
-            if (method.isTransactionRequired()) {
-                sb.append("    @Transactional\n");
-            }
-            
+            // Pure JDBC implementation - no @Transactional annotations needed
             sb.append("    @Override\n");
             sb.append("    public ").append(method.getSignature()).append(" {\n");
             
@@ -483,7 +494,7 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate method implementation body with proper SQL execution
+     * Generate method implementation body with Pure JDBC execution
      */
     private void generateMethodImplementationBody(StringBuilder sb, CustomMethod method, DaoGenerationModel model) {
         String returnType = method.getReturnType();
@@ -501,26 +512,27 @@ public class RepositoryDrivenDaoGenerator {
         // Extract parameter names from method signature (not YAML)
         List<String> signatureParams = extractParameterNamesFromSignature(method.getSignature());
         
-        // Build parameter map using signature parameters
-        if (!signatureParams.isEmpty()) {
-            sb.append("        MapSqlParameterSource params = new MapSqlParameterSource();\n");
-            for (String paramName : signatureParams) {
-                sb.append("        params.addValue(\"").append(paramName).append("\", ").append(paramName).append(");\n");
-            }
-            sb.append("\n");
-        }
-        
         // Generate appropriate query execution based on return type
         if (returnType.startsWith("Optional<")) {
-            generateOptionalQueryExecution(sb, sqlConstant, signatureParams, model);
+            generateOptionalQueryExecutionPureJdbc(sb, sqlConstant, signatureParams, model);
         } else if (returnType.startsWith("List<")) {
-            generateListQueryExecution(sb, sqlConstant, signatureParams, returnType, model);
+            // Check if this is a special method that needs custom parameter mapping
+            if ("findAllChecklistIdsForCurrentFacilityAndOrganisationByObjectTypeInData".equals(methodName)) {
+                generateListQueryExecutionPureJdbcForMethod(sb, sqlConstant, signatureParams, returnType, model, methodName);
+            } else {
+                generateListQueryExecutionPureJdbc(sb, sqlConstant, signatureParams, returnType, model);
+            }
         } else if (returnType.startsWith("Set<")) {
-            generateSetQueryExecution(sb, sqlConstant, signatureParams, returnType, model);
+            generateSetQueryExecutionPureJdbc(sb, sqlConstant, signatureParams, returnType, model);
         } else if (returnType.equals("void")) {
-            generateUpdateExecution(sb, sqlConstant, signatureParams);
+            // Check if this is a special method that needs custom parameter mapping
+            if ("updateChecklistDuringRecall".equals(methodName)) {
+                generateUpdateExecutionPureJdbcForMethod(sb, sqlConstant, signatureParams, methodName);
+            } else {
+                generateUpdateExecutionPureJdbc(sb, sqlConstant, signatureParams);
+            }
         } else {
-            generateSingleValueExecution(sb, sqlConstant, signatureParams, returnType);
+            generateSingleValueExecutionPureJdbc(sb, sqlConstant, signatureParams, returnType);
         }
     }
     
@@ -571,26 +583,56 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate standard findAll implementation
+     * Generate standard findAll implementation with Pure JDBC
      */
     private void generateStandardFindAllImplementation(StringBuilder sb, DaoGenerationModel model) {
-        sb.append("        return jdbcTemplate.query(").append(model.getEntityName()).append("Sql.FIND_ALL, rowMapper);\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.FIND_ALL;\n");
+        sb.append("        List<").append(model.getEntityName()).append("> results = new ArrayList<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql);\n");
+        sb.append("             ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("            \n");
+        sb.append("            while (rs.next()) {\n");
+        sb.append("                results.add(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        sb.append("            }\n");
+        sb.append("            return results;\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in findAll query execution\", e);\n");
+        sb.append("        }\n");
     }
     
     /**
-     * Generate findAllByIdIn implementation with Sort handling
+     * Generate findAllByIdIn implementation with Pure JDBC and dynamic Sort handling
      */
     private void generateFindAllByIdInImplementation(StringBuilder sb, DaoGenerationModel model) {
-        sb.append("        MapSqlParameterSource params = new MapSqlParameterSource();\n");
-        sb.append("        params.addValue(\"id\", id);\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.FIND_ALL_BY_ID_IN;\n");
         sb.append("        \n");
-        sb.append("        // TODO: Apply sort parameter to SQL query\n");
-        sb.append("        // For now, use basic query without sorting\n");
-        sb.append("        return jdbcTemplate.query(\n");
-        sb.append("            ").append(model.getEntityName()).append("Sql.FIND_ALL_BY_ID_IN,\n");
-        sb.append("            params,\n");
-        sb.append("            rowMapper\n");
-        sb.append("        );\n");
+        sb.append("        // Apply dynamic sorting\n");
+        sb.append("        if (sort != null && sort.isSorted()) {\n");
+        sb.append("            sql += \" ORDER BY \" + buildOrderByClause(sort);\n");
+        sb.append("        } else {\n");
+        sb.append("            sql += \" ORDER BY c.id ASC\";  // Default sort\n");
+        sb.append("        }\n");
+        sb.append("        \n");
+        sb.append("        List<").append(model.getEntityName()).append("> results = new ArrayList<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        sb.append("            // Convert Collection<Long> to SQL Array\n");
+        sb.append("            Array idArray = conn.createArrayOf(\"BIGINT\", id.toArray());\n");
+        sb.append("            stmt.setArray(1, idArray);\n");
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                while (rs.next()) {\n");
+        sb.append("                    results.add(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        sb.append("                }\n");
+        sb.append("            }\n");
+        sb.append("            return results;\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in findAllByIdIn query execution\", e);\n");
+        sb.append("        }\n");
     }
     
     /**
@@ -704,6 +746,317 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
+     * Generate Optional query execution with Pure JDBC
+     */
+    private void generateOptionalQueryExecutionPureJdbc(StringBuilder sb, String sqlConstant, List<String> signatureParams, DaoGenerationModel model) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting
+        generateParameterSettingForQuery(sb, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                if (rs.next()) {\n");
+        sb.append("                    return Optional.of(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        sb.append("                }\n");
+        sb.append("                return Optional.empty();\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in query execution\", e);\n");
+        sb.append("        }\n");
+    }
+    
+    /**
+     * Generate List query execution with Pure JDBC
+     */
+    private void generateListQueryExecutionPureJdbc(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType, DaoGenerationModel model) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        List<").append(extractGenericType(returnType)).append("> results = new ArrayList<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting
+        generateParameterSettingForQuery(sb, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                while (rs.next()) {\n");
+        
+        // Check if it's a view type or entity type
+        if (returnType.contains("View") || returnType.contains("Long") || returnType.contains("String")) {
+            sb.append("                    results.add(mapRowTo").append(extractReturnEntityType(returnType)).append("(rs));\n");
+        } else {
+            sb.append("                    results.add(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        }
+        
+        sb.append("                }\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in query execution\", e);\n");
+        sb.append("        }\n");
+        sb.append("        \n");
+        sb.append("        return results;\n");
+    }
+    
+    /**
+     * Generate List query execution with Pure JDBC for specific methods
+     */
+    private void generateListQueryExecutionPureJdbcForMethod(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType, DaoGenerationModel model, String methodName) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        List<").append(extractGenericType(returnType)).append("> results = new ArrayList<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting with method-specific logic
+        generateParameterSettingForSpecificMethod(sb, methodName, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                while (rs.next()) {\n");
+        
+        // Check if it's a view type or entity type
+        if (returnType.contains("View") || returnType.contains("Long") || returnType.contains("String")) {
+            sb.append("                    results.add(mapRowTo").append(extractReturnEntityType(returnType)).append("(rs));\n");
+        } else {
+            sb.append("                    results.add(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        }
+        
+        sb.append("                }\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in query execution\", e);\n");
+        sb.append("        }\n");
+        sb.append("        \n");
+        sb.append("        return results;\n");
+    }
+    
+    /**
+     * Generate Set query execution with Pure JDBC
+     */
+    private void generateSetQueryExecutionPureJdbc(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType, DaoGenerationModel model) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        Set<").append(extractGenericType(returnType)).append("> results = new HashSet<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting
+        generateParameterSettingForQuery(sb, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                while (rs.next()) {\n");
+        
+        // For sets, typically return primitive types like Long
+        if (returnType.contains("Long")) {
+            sb.append("                    results.add(rs.getLong(1));\n");
+        } else if (returnType.contains("String")) {
+            sb.append("                    results.add(rs.getString(1));\n");
+        } else {
+            sb.append("                    results.add(mapRowTo").append(extractReturnEntityType(returnType)).append("(rs));\n");
+        }
+        
+        sb.append("                }\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in query execution\", e);\n");
+        sb.append("        }\n");
+        sb.append("        \n");
+        sb.append("        return results;\n");
+    }
+    
+    /**
+     * Generate update execution with Pure JDBC
+     */
+    private void generateUpdateExecutionPureJdbc(StringBuilder sb, String sqlConstant, List<String> signatureParams) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting
+        generateParameterSettingForQuery(sb, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            int rowsAffected = stmt.executeUpdate();\n");
+        sb.append("            if (rowsAffected == 0) {\n");
+        sb.append("                throw new RuntimeException(\"No rows affected by update operation\");\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in update execution\", e);\n");
+        sb.append("        }\n");
+    }
+    
+    /**
+     * Generate update execution with Pure JDBC for specific methods
+     */
+    private void generateUpdateExecutionPureJdbcForMethod(StringBuilder sb, String sqlConstant, List<String> signatureParams, String methodName) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting with method-specific logic
+        generateParameterSettingForSpecificMethod(sb, methodName, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            int rowsAffected = stmt.executeUpdate();\n");
+        sb.append("            if (rowsAffected == 0) {\n");
+        sb.append("                throw new RuntimeException(\"No rows affected by update operation\");\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in update execution\", e);\n");
+        sb.append("        }\n");
+    }
+    
+    /**
+     * Generate single value execution with Pure JDBC
+     */
+    private void generateSingleValueExecutionPureJdbc(StringBuilder sb, String sqlConstant, List<String> signatureParams, String returnType) {
+        sb.append("        String sql = ").append(sqlConstant).append(";\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        
+        // Generate parameter setting
+        generateParameterSettingForQuery(sb, signatureParams);
+        
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                if (rs.next()) {\n");
+        
+        // Handle different return types
+        if (returnType.contains("State.")) {
+            sb.append("                    String stateValue = rs.getString(1);\n");
+            sb.append("                    return ").append(returnType).append(".valueOf(stateValue);\n");
+        } else if (returnType.contains("View")) {
+            sb.append("                    return mapRowTo").append(returnType).append("(rs);\n");
+        } else if (returnType.equals("String")) {
+            sb.append("                    return rs.getString(1);\n");
+        } else if (returnType.equals("Long")) {
+            sb.append("                    return rs.getLong(1);\n");
+        } else if (returnType.equals("Integer")) {
+            sb.append("                    return rs.getInt(1);\n");
+        } else if (returnType.equals("Boolean")) {
+            sb.append("                    return rs.getBoolean(1);\n");
+        } else {
+            sb.append("                    return rs.getObject(1, ").append(returnType).append(".class);\n");
+        }
+        
+        sb.append("                }\n");
+        sb.append("                return null;\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error in query execution\", e);\n");
+        sb.append("        }\n");
+    }
+    
+    /**
+     * Generate parameter setting for query methods with enhanced type handling
+     */
+    private void generateParameterSettingForQuery(StringBuilder sb, List<String> signatureParams) {
+        for (int i = 0; i < signatureParams.size(); i++) {
+            String paramName = signatureParams.get(i);
+            int paramIndex = i + 1;
+            
+            // Enhanced parameter setting with proper type inference
+            if (paramName.toLowerCase().contains("ids") && (paramName.toLowerCase().contains("checklist") || paramName.toLowerCase().contains("facility"))) {
+                // Handle Collection<Long> or List<Long> or Set<Long>
+                sb.append("            Array ").append(paramName).append("Array = conn.createArrayOf(\"BIGINT\", ").append(paramName).append(".toArray());\n");
+                sb.append("            stmt.setArray(").append(paramIndex).append(", ").append(paramName).append("Array);\n");
+            } else if (paramName.toLowerCase().contains("state") && paramName.toLowerCase().contains("set")) {
+                // Handle Set<State> 
+                sb.append("            String[] stateNames = ").append(paramName).append(".stream().map(Enum::name).toArray(String[]::new);\n");
+                sb.append("            Array stateArray = conn.createArrayOf(\"VARCHAR\", stateNames);\n");
+                sb.append("            stmt.setArray(").append(paramIndex).append(", stateArray);\n");
+            } else if (paramName.toLowerCase().contains("id") && !paramName.toLowerCase().contains("ids")) {
+                // Single ID parameter
+                sb.append("            stmt.setLong(").append(paramIndex).append(", ").append(paramName).append(");\n");
+            } else if (paramName.toLowerCase().contains("state") && !paramName.toLowerCase().contains("set")) {
+                // Single State parameter
+                sb.append("            stmt.setString(").append(paramIndex).append(", ").append(paramName).append(".name());\n");
+            } else if (paramName.toLowerCase().contains("archived") || paramName.toLowerCase().contains("flag")) {
+                sb.append("            stmt.setBoolean(").append(paramIndex).append(", ").append(paramName).append(");\n");
+            } else if (paramName.toLowerCase().contains("name") || paramName.toLowerCase().contains("code")) {
+                sb.append("            stmt.setString(").append(paramIndex).append(", ").append(paramName).append(");\n");
+            } else {
+                // Default to object for unknown types
+                sb.append("            stmt.setObject(").append(paramIndex).append(", ").append(paramName).append(");\n");
+            }
+        }
+    }
+    
+    /**
+     * Generate parameter setting for specific methods with special parameter mapping
+     */
+    private void generateParameterSettingForSpecificMethod(StringBuilder sb, String methodName, List<String> signatureParams) {
+        if ("updateChecklistDuringRecall".equals(methodName)) {
+            // Special handling: SQL has 3 parameters but method has 2
+            // SQL: SET created_by = ?, modified_by = ?, WHERE id = ?
+            // Method: updateChecklistDuringRecall(Long checklistId, Long userId)
+            // Parameter mapping: userId -> created_by, userId -> modified_by, checklistId -> id
+            sb.append("            // Parameter 1: created_by = userId\n");
+            sb.append("            stmt.setLong(1, userId);\n");
+            sb.append("            // Parameter 2: modified_by = userId\n");
+            sb.append("            stmt.setLong(2, userId);\n");
+            sb.append("            // Parameter 3: WHERE id = checklistId\n");
+            sb.append("            stmt.setLong(3, checklistId);\n");
+        } else if ("findAllChecklistIdsForCurrentFacilityAndOrganisationByObjectTypeInData".equals(methodName)) {
+            // Special handling: Complex query with 7 parameters and mixed types
+            // SQL has: facilityId, organisationId, objectTypeId(String), archived, useCaseId, name, name
+            // Method: (Long facilityId, Long organisationId, String objectTypeId, Long useCaseId, String name, boolean archived)
+            sb.append("            // Parameter 1: cfm.facilities_id = facilityId\n");
+            sb.append("            stmt.setLong(1, facilityId);\n");
+            sb.append("            // Parameter 2: c.organisations_id = organisationId\n");
+            sb.append("            stmt.setLong(2, organisationId);\n");
+            sb.append("            // Parameter 3: p.data->>'objectTypeId'= objectTypeId (String)\n");
+            sb.append("            stmt.setString(3, objectTypeId);\n");
+            sb.append("            // Parameter 4: c.archived = archived\n");
+            sb.append("            stmt.setBoolean(4, archived);\n");
+            sb.append("            // Parameter 5: c.use_cases_id = useCaseId\n");
+            sb.append("            stmt.setLong(5, useCaseId);\n");
+            sb.append("            // Parameter 6: CAST(? as varchar) for name check\n");
+            sb.append("            stmt.setString(6, name);\n");
+            sb.append("            // Parameter 7: || ? || for name pattern matching\n");
+            sb.append("            stmt.setString(7, name);\n");
+        } else {
+            // Use standard parameter mapping
+            generateParameterSettingForQuery(sb, signatureParams);
+        }
+    }
+    
+    /**
+     * Extract return entity type from generic types
+     */
+    private String extractReturnEntityType(String returnType) {
+        if (returnType.contains("ChecklistView")) {
+            return "ChecklistView";
+        } else if (returnType.contains("ChecklistJobLiteView")) {
+            return "ChecklistJobLiteView";
+        } else if (returnType.contains("JobLogMigrationChecklistView")) {
+            return "JobLogMigrationChecklistView";
+        } else if (returnType.contains("Long")) {
+            return "Long";
+        } else if (returnType.contains("String")) {
+            return "String";
+        } else {
+            return "Object";
+        }
+    }
+    
+    /**
      * Extract generic type from parameterized type
      */
     private String extractGenericType(String parameterizedType) {
@@ -739,128 +1092,432 @@ public class RepositoryDrivenDaoGenerator {
     // Helper methods and utility classes...
     
     private void generateStandardCrudMethods(StringBuilder sb, DaoGenerationModel model) {
-        sb.append("    // Standard CRUD implementations\n\n");
+        sb.append("    // Standard CRUD implementations with Pure JDBC\n\n");
         
         // findById
         sb.append("    @Override\n");
         sb.append("    public Optional<").append(model.getEntityName()).append("> findById(Long id) {\n");
-        sb.append("        try {\n");
-        sb.append("            ").append(model.getEntityName()).append(" result = jdbcTemplate.queryForObject(\n");
-        sb.append("                ").append(model.getEntityName()).append("Sql.FIND_BY_ID,\n");
-        sb.append("                Map.of(\"id\", id),\n");
-        sb.append("                rowMapper\n");
-        sb.append("            );\n");
-        sb.append("            return Optional.ofNullable(result);\n");
-        sb.append("        } catch (EmptyResultDataAccessException e) {\n");
-        sb.append("            return Optional.empty();\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.FIND_BY_ID;\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        sb.append("            stmt.setLong(1, id);\n");
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                if (rs.next()) {\n");
+        sb.append("                    return Optional.of(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        sb.append("                }\n");
+        sb.append("                return Optional.empty();\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error finding ").append(model.getEntityName().toLowerCase()).append(" by id: \" + id, e);\n");
         sb.append("        }\n");
         sb.append("    }\n\n");
         
         // findAll
         sb.append("    @Override\n");
         sb.append("    public List<").append(model.getEntityName()).append("> findAll() {\n");
-        sb.append("        return jdbcTemplate.query(").append(model.getEntityName()).append("Sql.FIND_ALL, rowMapper);\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.FIND_ALL;\n");
+        sb.append("        List<").append(model.getEntityName()).append("> results = new ArrayList<>();\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql);\n");
+        sb.append("             ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("            \n");
+        sb.append("            while (rs.next()) {\n");
+        sb.append("                results.add(mapRowTo").append(model.getEntityName()).append("(rs));\n");
+        sb.append("            }\n");
+        sb.append("            return results;\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error finding all ").append(model.getEntityName().toLowerCase()).append("s\", e);\n");
+        sb.append("        }\n");
         sb.append("    }\n\n");
         
-        // save - smart implementation
+        // save - smart implementation with manual transaction
         sb.append("    @Override\n");
-        sb.append("    @Transactional\n");
         sb.append("    public ").append(model.getEntityName()).append(" save(").append(model.getEntityName()).append(" entity) {\n");
-        sb.append("        if (entity.getId() == null) {\n");
-        sb.append("            return insert(entity);\n");
-        sb.append("        } else {\n");
-        sb.append("            return update(entity);\n");
+        sb.append("        Connection conn = null;\n");
+        sb.append("        try {\n");
+        sb.append("            conn = dataSource.getConnection();\n");
+        sb.append("            conn.setAutoCommit(false);\n");
+        sb.append("            \n");
+        sb.append("            ").append(model.getEntityName()).append(" result;\n");
+        sb.append("            if (entity.getId() == null) {\n");
+        sb.append("                result = insert(entity, conn);\n");
+        sb.append("            } else {\n");
+        sb.append("                result = update(entity, conn);\n");
+        sb.append("            }\n");
+        sb.append("            \n");
+        sb.append("            conn.commit();\n");
+        sb.append("            return result;\n");
+        sb.append("            \n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            if (conn != null) {\n");
+        sb.append("                try {\n");
+        sb.append("                    conn.rollback();\n");
+        sb.append("                } catch (SQLException rollbackEx) {\n");
+        sb.append("                    e.addSuppressed(rollbackEx);\n");
+        sb.append("                }\n");
+        sb.append("            }\n");
+        sb.append("            throw new RuntimeException(\"Error saving ").append(model.getEntityName().toLowerCase()).append(": \" + e.getMessage(), e);\n");
+        sb.append("        } finally {\n");
+        sb.append("            if (conn != null) {\n");
+        sb.append("                try {\n");
+        sb.append("                    conn.setAutoCommit(true);\n");
+        sb.append("                    conn.close();\n");
+        sb.append("                } catch (SQLException e) {\n");
+        sb.append("                    // Log error but don't throw\n");
+        sb.append("                }\n");
+        sb.append("            }\n");
         sb.append("        }\n");
         sb.append("    }\n\n");
         
         // deleteById
         sb.append("    @Override\n");
-        sb.append("    @Transactional\n");
         sb.append("    public void deleteById(Long id) {\n");
-        sb.append("        jdbcTemplate.update(").append(model.getEntityName()).append("Sql.DELETE_BY_ID, Map.of(\"id\", id));\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.DELETE_BY_ID;\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        sb.append("            stmt.setLong(1, id);\n");
+        sb.append("            \n");
+        sb.append("            int rowsAffected = stmt.executeUpdate();\n");
+        sb.append("            if (rowsAffected == 0) {\n");
+        sb.append("                throw new RuntimeException(\"No ").append(model.getEntityName().toLowerCase()).append(" found with id: \" + id);\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error deleting ").append(model.getEntityName().toLowerCase()).append(" with id: \" + id, e);\n");
+        sb.append("        }\n");
         sb.append("    }\n\n");
         
         // existsById
         sb.append("    @Override\n");
         sb.append("    public boolean existsById(Long id) {\n");
-        sb.append("        Boolean result = jdbcTemplate.queryForObject(\n");
-        sb.append("            ").append(model.getEntityName()).append("Sql.EXISTS_BY_ID,\n");
-        sb.append("            Map.of(\"id\", id),\n");
-        sb.append("            Boolean.class\n");
-        sb.append("        );\n");
-        sb.append("        return result != null && result;\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.EXISTS_BY_ID;\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            \n");
+        sb.append("            stmt.setLong(1, id);\n");
+        sb.append("            \n");
+        sb.append("            try (ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("                if (rs.next()) {\n");
+        sb.append("                    return rs.getBoolean(1);\n");
+        sb.append("                }\n");
+        sb.append("                return false;\n");
+        sb.append("            }\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error checking existence of ").append(model.getEntityName().toLowerCase()).append(" with id: \" + id, e);\n");
+        sb.append("        }\n");
         sb.append("    }\n\n");
         
         // count
         sb.append("    @Override\n");
         sb.append("    public long count() {\n");
-        sb.append("        Long result = jdbcTemplate.queryForObject(").append(model.getEntityName()).append("Sql.COUNT_ALL, Map.of(), Long.class);\n");
-        sb.append("        return result != null ? result : 0L;\n");
+        sb.append("        String sql = ").append(model.getEntityName()).append("Sql.COUNT_ALL;\n");
+        sb.append("        \n");
+        sb.append("        try (Connection conn = dataSource.getConnection();\n");
+        sb.append("             PreparedStatement stmt = conn.prepareStatement(sql);\n");
+        sb.append("             ResultSet rs = stmt.executeQuery()) {\n");
+        sb.append("            \n");
+        sb.append("            if (rs.next()) {\n");
+        sb.append("                return rs.getLong(1);\n");
+        sb.append("            }\n");
+        sb.append("            return 0L;\n");
+        sb.append("        } catch (SQLException e) {\n");
+        sb.append("            throw new RuntimeException(\"Error counting ").append(model.getEntityName().toLowerCase()).append("s\", e);\n");
+        sb.append("        }\n");
         sb.append("    }\n\n");
         
         // Helper methods for save implementation
         generateSaveHelperMethods(sb, model);
+        
+        // Add inline row mapping method
+        generateInlineRowMapping(sb, model);
     }
     
     /**
-     * Generate helper methods for save implementation
+     * Generate helper methods for save implementation with Pure JDBC
      */
     private void generateSaveHelperMethods(StringBuilder sb, DaoGenerationModel model) {
         String entityName = model.getEntityName();
         
-        // insert method
-        sb.append("    private ").append(entityName).append(" insert(").append(entityName).append(" entity) {\n");
+        // insert method with Connection parameter
+        sb.append("    private ").append(entityName).append(" insert(").append(entityName).append(" entity, Connection conn) throws SQLException {\n");
+        sb.append("        String sql = ").append(entityName).append("Sql.INSERT;\n");
+        sb.append("        \n");
         sb.append("        // Set audit fields if they exist\n");
         sb.append("        long now = System.currentTimeMillis();\n");
         sb.append("        if (entity.getCreatedAt() == null) {\n");
         sb.append("            entity.setCreatedAt(now);\n");
         sb.append("        }\n");
-        sb.append("        entity.setModifiedAt(now);\n\n");
-        
-        sb.append("        MapSqlParameterSource params = createParameterMap(entity);\n");
-        sb.append("        Long generatedId = jdbcTemplate.queryForObject(\n");
-        sb.append("            ").append(entityName).append("Sql.INSERT,\n");
-        sb.append("            params,\n");
-        sb.append("            Long.class\n");
-        sb.append("        );\n");
-        sb.append("        entity.setId(generatedId);\n");
-        sb.append("        return entity;\n");
-        sb.append("    }\n\n");
-        
-        // update method
-        sb.append("    private ").append(entityName).append(" update(").append(entityName).append(" entity) {\n");
-        sb.append("        entity.setModifiedAt(System.currentTimeMillis());\n\n");
-        sb.append("        MapSqlParameterSource params = createParameterMap(entity);\n");
-        sb.append("        int rowsAffected = jdbcTemplate.update(").append(entityName).append("Sql.UPDATE, params);\n");
+        sb.append("        entity.setModifiedAt(now);\n");
         sb.append("        \n");
-        sb.append("        if (rowsAffected == 0) {\n");
-        sb.append("            throw new RuntimeException(\"Entity not found for update\");\n");
+        sb.append("        try (PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {\n");
+        sb.append("            setInsertParameters(stmt, entity);\n");
+        sb.append("            \n");
+        sb.append("            int rowsAffected = stmt.executeUpdate();\n");
+        sb.append("            if (rowsAffected == 0) {\n");
+        sb.append("                throw new SQLException(\"Insert failed, no rows affected\");\n");
+        sb.append("            }\n");
+        sb.append("            \n");
+        sb.append("            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {\n");
+        sb.append("                if (generatedKeys.next()) {\n");
+        sb.append("                    entity.setId(generatedKeys.getLong(1));\n");
+        sb.append("                    return entity;\n");
+        sb.append("                } else {\n");
+        sb.append("                    throw new SQLException(\"Insert failed, no generated key obtained\");\n");
+        sb.append("                }\n");
+        sb.append("            }\n");
         sb.append("        }\n");
-        sb.append("        return entity;\n");
         sb.append("    }\n\n");
         
-        // createParameterMap method
-        sb.append("    private MapSqlParameterSource createParameterMap(").append(entityName).append(" entity) {\n");
-        sb.append("        MapSqlParameterSource params = new MapSqlParameterSource();\n\n");
+        // update method with Connection parameter
+        sb.append("    private ").append(entityName).append(" update(").append(entityName).append(" entity, Connection conn) throws SQLException {\n");
+        sb.append("        String sql = ").append(entityName).append("Sql.UPDATE;\n");
+        sb.append("        entity.setModifiedAt(System.currentTimeMillis());\n");
+        sb.append("        \n");
+        sb.append("        try (PreparedStatement stmt = conn.prepareStatement(sql)) {\n");
+        sb.append("            setUpdateParameters(stmt, entity);\n");
+        sb.append("            \n");
+        sb.append("            int rowsAffected = stmt.executeUpdate();\n");
+        sb.append("            if (rowsAffected == 0) {\n");
+        sb.append("                throw new SQLException(\"Entity not found for update\");\n");
+        sb.append("            }\n");
+        sb.append("            return entity;\n");
+        sb.append("        }\n");
+        sb.append("    }\n\n");
         
-        // Add parameter mappings for all fields
+        // setInsertParameters method
+        sb.append("    private void setInsertParameters(PreparedStatement stmt, ").append(entityName).append(" entity) throws SQLException {\n");
+        sb.append("        int paramIndex = 1;\n");
+        sb.append("        \n");
+        
+        // Add parameter setting for all fields except ID
         for (FieldInfo field : model.getPojoMetadata().getFields().values()) {
-            String getterName = "get" + capitalize(field.getFieldName());
-            String fieldName = field.getFieldName();
-            
-            if (field.getJavaType().contains("JsonNode")) {
-                sb.append("        if (entity.").append(getterName).append("() != null) {\n");
-                sb.append("            params.addValue(\"").append(fieldName).append("\", entity.").append(getterName).append("().toString());\n");
-                sb.append("        } else {\n");
-                sb.append("            params.addValue(\"").append(fieldName).append("\", null);\n");
-                sb.append("        }\n");
-            } else {
-                sb.append("        params.addValue(\"").append(fieldName).append("\", entity.").append(getterName).append("());\n");
+            if (!"id".equals(field.getFieldName())) {
+                generateParameterSetting(sb, field, "entity");
             }
         }
         
-        sb.append("\n        return params;\n");
         sb.append("    }\n\n");
+        
+        // setUpdateParameters method
+        sb.append("    private void setUpdateParameters(PreparedStatement stmt, ").append(entityName).append(" entity) throws SQLException {\n");
+        sb.append("        int paramIndex = 1;\n");
+        sb.append("        \n");
+        
+        // Add parameter setting for all fields except ID, then ID at the end
+        for (FieldInfo field : model.getPojoMetadata().getFields().values()) {
+            if (!"id".equals(field.getFieldName())) {
+                generateParameterSetting(sb, field, "entity");
+            }
+        }
+        
+        // Add ID parameter for WHERE clause
+        sb.append("        stmt.setLong(paramIndex++, entity.getId());\n");
+        
+        sb.append("    }\n\n");
+    }
+    
+    /**
+     * Generate parameter setting for a field
+     */
+    private void generateParameterSetting(StringBuilder sb, FieldInfo field, String entityVar) {
+        String getterName = "get" + capitalize(field.getFieldName());
+        String javaType = field.getJavaType();
+        
+        if (javaType.contains("JsonNode")) {
+            sb.append("        if (").append(entityVar).append(".").append(getterName).append("() != null) {\n");
+            sb.append("            stmt.setString(paramIndex++, ").append(entityVar).append(".").append(getterName).append("().toString());\n");
+            sb.append("        } else {\n");
+            sb.append("            stmt.setString(paramIndex++, \"[]\");\n");
+            sb.append("        }\n");
+        } else if (javaType.equals("Long")) {
+            sb.append("        if (").append(entityVar).append(".").append(getterName).append("() != null) {\n");
+            sb.append("            stmt.setLong(paramIndex++, ").append(entityVar).append(".").append(getterName).append("());\n");
+            sb.append("        } else {\n");
+            sb.append("            stmt.setNull(paramIndex++, java.sql.Types.BIGINT);\n");
+            sb.append("        }\n");
+        } else if (javaType.equals("String")) {
+            sb.append("        stmt.setString(paramIndex++, ").append(entityVar).append(".").append(getterName).append("());\n");
+        } else if (javaType.equals("Boolean")) {
+            sb.append("        stmt.setBoolean(paramIndex++, ").append(entityVar).append(".").append(getterName).append("());\n");
+        } else if (javaType.equals("Integer")) {
+            sb.append("        if (").append(entityVar).append(".").append(getterName).append("() != null) {\n");
+            sb.append("            stmt.setInt(paramIndex++, ").append(entityVar).append(".").append(getterName).append("());\n");
+            sb.append("        } else {\n");
+            sb.append("            stmt.setNull(paramIndex++, java.sql.Types.INTEGER);\n");
+            sb.append("        }\n");
+        } else if (javaType.contains("State.")) {
+            sb.append("        if (").append(entityVar).append(".").append(getterName).append("() != null) {\n");
+            sb.append("            stmt.setString(paramIndex++, ").append(entityVar).append(".").append(getterName).append("().name());\n");
+            sb.append("        } else {\n");
+            sb.append("            stmt.setNull(paramIndex++, java.sql.Types.VARCHAR);\n");
+            sb.append("        }\n");
+        } else {
+            sb.append("        stmt.setObject(paramIndex++, ").append(entityVar).append(".").append(getterName).append("());\n");
+        }
+    }
+    
+    /**
+     * Generate inline row mapping method for Pure JDBC
+     */
+    private void generateInlineRowMapping(StringBuilder sb, DaoGenerationModel model) {
+        String entityName = model.getEntityName();
+        
+        // Main entity mapper
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to ").append(entityName).append(" entity\n");
+        sb.append("     */\n");
+        sb.append("    private ").append(entityName).append(" mapRowTo").append(entityName).append("(ResultSet rs) throws SQLException {\n");
+        sb.append("        ").append(entityName).append(" entity = new ").append(entityName).append("();\n");
+        sb.append("        \n");
+        
+        for (FieldInfo field : model.getPojoMetadata().getFields().values()) {
+            generateFieldMapping(sb, field);
+        }
+        
+        sb.append("        \n");
+        sb.append("        return entity;\n");
+        sb.append("    }\n\n");
+        
+        // Add missing mapper methods for view types
+        generateMissingMapperMethods(sb, model);
+        
+        // Add JSON parsing helper if needed
+        boolean needsJsonImports = model.getPojoMetadata().getFields().values().stream()
+            .anyMatch(field -> field.getJavaType().contains("JsonNode"));
+        if (needsJsonImports) {
+            sb.append("    /**\n");
+            sb.append("     * Parse JSON string to JsonNode\n");
+            sb.append("     */\n");
+            sb.append("    private JsonNode parseJsonNode(String json) {\n");
+            sb.append("        if (json == null || json.trim().isEmpty()) {\n");
+            sb.append("            return null;\n");
+            sb.append("        }\n");
+            sb.append("        try {\n");
+            sb.append("            return objectMapper.readTree(json);\n");
+            sb.append("        } catch (Exception e) {\n");
+            sb.append("            throw new RuntimeException(\"Failed to parse JSON: \" + json, e);\n");
+            sb.append("        }\n");
+            sb.append("    }\n\n");
+        }
+        
+        // Add sorting utility method if needed
+        if (needsPaginationImports(model)) {
+            sb.append("    /**\n");
+            sb.append("     * Build ORDER BY clause from Sort parameter\n");
+            sb.append("     */\n");
+            sb.append("    private String buildOrderByClause(Sort sort) {\n");
+            sb.append("        StringBuilder orderBy = new StringBuilder();\n");
+            sb.append("        boolean first = true;\n");
+            sb.append("        for (Sort.Order order : sort) {\n");
+            sb.append("            if (!first) orderBy.append(\", \");\n");
+            sb.append("            orderBy.append(\"c.\").append(order.getProperty());\n");
+            sb.append("            orderBy.append(\" \").append(order.getDirection().name());\n");
+            sb.append("            first = false;\n");
+            sb.append("        }\n");
+            sb.append("        return orderBy.toString();\n");
+            sb.append("    }\n\n");
+        }
+    }
+    
+    /**
+     * Generate missing mapper methods for view types and primitives
+     */
+    private void generateMissingMapperMethods(StringBuilder sb, DaoGenerationModel model) {
+        // Generate mappers for primitive types
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to Long value\n");
+        sb.append("     */\n");
+        sb.append("    private Long mapRowToLong(ResultSet rs) throws SQLException {\n");
+        sb.append("        return rs.getLong(1);\n");
+        sb.append("    }\n\n");
+        
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to String value\n");
+        sb.append("     */\n");
+        sb.append("    private String mapRowToString(ResultSet rs) throws SQLException {\n");
+        sb.append("        return rs.getString(1);\n");
+        sb.append("    }\n\n");
+        
+        // Generate view mappers
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to ChecklistView\n");
+        sb.append("     */\n");
+        sb.append("    private ChecklistView mapRowToChecklistView(ResultSet rs) throws SQLException {\n");
+        sb.append("        return new ChecklistView(\n");
+        sb.append("            rs.getLong(\"id\"),\n");
+        sb.append("            rs.getString(\"code\"),\n");
+        sb.append("            rs.getString(\"name\"),\n");
+        sb.append("            rs.getString(\"color_code\")\n");
+        sb.append("        );\n");
+        sb.append("    }\n\n");
+        
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to ChecklistJobLiteView\n");
+        sb.append("     */\n");
+        sb.append("    private ChecklistJobLiteView mapRowToChecklistJobLiteView(ResultSet rs) throws SQLException {\n");
+        sb.append("        return new ChecklistJobLiteView(\n");
+        sb.append("            rs.getLong(\"id\"),\n");
+        sb.append("            rs.getString(\"name\"),\n");
+        sb.append("            rs.getString(\"code\")\n");
+        sb.append("        );\n");
+        sb.append("    }\n\n");
+        
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to JobLogMigrationChecklistView\n");
+        sb.append("     */\n");
+        sb.append("    private JobLogMigrationChecklistView mapRowToJobLogMigrationChecklistView(ResultSet rs) throws SQLException {\n");
+        sb.append("        return new JobLogMigrationChecklistView(\n");
+        sb.append("            rs.getLong(\"id\"),\n");
+        sb.append("            rs.getString(\"name\"),\n");
+        sb.append("            rs.getString(\"code\"),\n");
+        sb.append("            rs.getString(\"state\")\n");
+        sb.append("        );\n");
+        sb.append("    }\n\n");
+    }
+    
+    /**
+     * Generate field mapping for Pure JDBC
+     */
+    private void generateFieldMapping(StringBuilder sb, FieldInfo field) {
+        String setterName = "set" + capitalize(field.getFieldName());
+        String columnName = field.getColumnName();
+        String javaType = field.getJavaType();
+        
+        switch (javaType) {
+            case "Long":
+                sb.append("        entity.").append(setterName).append("(rs.getLong(\"").append(columnName).append("\"));\n");
+                break;
+            case "String":
+                sb.append("        entity.").append(setterName).append("(rs.getString(\"").append(columnName).append("\"));\n");
+                break;
+            case "Boolean":
+                sb.append("        entity.").append(setterName).append("(rs.getBoolean(\"").append(columnName).append("\"));\n");
+                break;
+            case "Integer":
+                sb.append("        entity.").append(setterName).append("(rs.getInt(\"").append(columnName).append("\"));\n");
+                break;
+            default:
+                if (javaType.contains("JsonNode")) {
+                    sb.append("        String ").append(field.getFieldName()).append("Json = rs.getString(\"").append(columnName).append("\");\n");
+                    sb.append("        if (").append(field.getFieldName()).append("Json != null) {\n");
+                    sb.append("            entity.").append(setterName).append("(parseJsonNode(").append(field.getFieldName()).append("Json));\n");
+                    sb.append("        }\n");
+                } else if (javaType.startsWith("State.")) {
+                    sb.append("        String ").append(field.getFieldName()).append("Value = rs.getString(\"").append(columnName).append("\");\n");
+                    sb.append("        if (").append(field.getFieldName()).append("Value != null) {\n");
+                    sb.append("            entity.").append(setterName).append("(").append(javaType).append(".valueOf(").append(field.getFieldName()).append("Value));\n");
+                    sb.append("        }\n");
+                } else {
+                    sb.append("        entity.").append(setterName).append("(rs.getObject(\"").append(columnName).append("\", ").append(javaType).append(".class));\n");
+                }
+                break;
+        }
     }
     
     // Utility methods
@@ -878,9 +1535,26 @@ public class RepositoryDrivenDaoGenerator {
         Pattern pattern = Pattern.compile("Signature: (.*)");
         Matcher matcher = pattern.matcher(yamlContent);
         if (matcher.find()) {
-            return matcher.group(1).trim();
+            String signature = matcher.group(1).trim();
+            // Convert Spring Data types to pure Java types
+            return convertSpringDataTypesToPureJava(signature);
         }
         return "void unknownMethod()";
+    }
+    
+    /**
+     * Convert Spring Data types to pure Java equivalents
+     */
+    private String convertSpringDataTypesToPureJava(String signature) {
+        String converted = signature;
+        
+        // Convert Spring Data types to our pure Java types
+        converted = converted.replace("Page<", "PageResult<");
+        converted = converted.replace("Pageable", "PageRequest");
+        converted = converted.replace("Specification", "FilterCriteria");
+        converted = converted.replace("Sort", "Sort");  // Keep as Sort since it exists in PaginationTypes
+        
+        return converted;
     }
     
     private String extractReturnTypeFromYaml(String yamlContent) {
@@ -940,7 +1614,7 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate enhanced row mapper with complete field mapping
+     * Generate enhanced row mapper with complete field mapping (Pure Java - No Spring)
      */
     private void generateRowMapper(DaoGenerationModel model, String outputDir) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -950,7 +1624,7 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("import java.sql.ResultSet;\n");
         sb.append("import java.sql.SQLException;\n");
         sb.append("import java.sql.Timestamp;\n");
-        sb.append("import org.springframework.jdbc.core.RowMapper;\n");
+        // Removed Spring JDBC import - using pure Java interface
         sb.append("import ").append(model.getPojoMetadata().getPackageName()).append(".").append(model.getEntityName()).append(";\n");
         
         // Add JSON imports if needed
@@ -965,18 +1639,20 @@ public class RepositoryDrivenDaoGenerator {
         
         // Class documentation
         sb.append("/**\n");
-        sb.append(" * Enhanced row mapper for ").append(model.getEntityName()).append(" entity\n");
-        sb.append(" * Generated with complete field mapping for all Java types\n");
+        sb.append(" * Pure Java row mapper for ").append(model.getEntityName()).append(" entity\n");
+        sb.append(" * Generated with complete field mapping - No Spring dependencies\n");
         sb.append(" */\n");
-        sb.append("public class ").append(model.getEntityName()).append("RowMapper implements RowMapper<").append(model.getEntityName()).append("> {\n\n");
+        sb.append("public class ").append(model.getEntityName()).append("RowMapper {\n\n");
         
         if (needsJsonImports) {
             sb.append("    private final ObjectMapper objectMapper = new ObjectMapper();\n\n");
         }
         
-        // mapRow method
-        sb.append("    @Override\n");
-        sb.append("    public ").append(model.getEntityName()).append(" mapRow(ResultSet rs, int rowNum) throws SQLException {\n");
+        // mapRow method (pure Java - no Spring interface)
+        sb.append("    /**\n");
+        sb.append("     * Map ResultSet row to ").append(model.getEntityName()).append(" entity\n");
+        sb.append("     */\n");
+        sb.append("    public ").append(model.getEntityName()).append(" mapRow(ResultSet rs) throws SQLException {\n");
         sb.append("        ").append(model.getEntityName()).append(" entity = new ").append(model.getEntityName()).append("();\n\n");
         
         // Map each field with proper type handling
@@ -989,7 +1665,10 @@ public class RepositoryDrivenDaoGenerator {
         
         // Helper methods for JSON parsing
         if (needsJsonImports) {
-            sb.append("\n    private JsonNode parseJsonNode(String json) {\n");
+            sb.append("\n    /**\n");
+            sb.append("     * Parse JSON string to JsonNode\n");
+            sb.append("     */\n");
+            sb.append("    private JsonNode parseJsonNode(String json) {\n");
             sb.append("        if (json == null || json.trim().isEmpty()) {\n");
             sb.append("            return null;\n");
             sb.append("        }\n");
@@ -1004,7 +1683,7 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("}\n");
         
         writeToFile(outputDir + "/" + model.getEntityName() + "RowMapper.java", sb.toString());
-        System.out.println("✅ Generated " + model.getEntityName() + "RowMapper.java with enhanced field mapping");
+        System.out.println("✅ Generated " + model.getEntityName() + "RowMapper.java with pure Java implementation");
     }
     
     /**
@@ -1093,14 +1772,14 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate standard CRUD SQL queries
+     * Generate standard CRUD SQL queries with positional parameters for Pure JDBC
      */
     private void generateStandardSqlQueries(StringBuilder sb, DaoGenerationModel model) {
         String tableName = model.getTableMetadata().getTableName();
         
-        sb.append("    // Standard CRUD queries\n");
+        sb.append("    // Standard CRUD queries with positional parameters\n");
         sb.append("    public static final String FIND_BY_ID = \"\"\"\n");
-        sb.append("        SELECT * FROM ").append(tableName).append(" WHERE id = :id\n");
+        sb.append("        SELECT * FROM ").append(tableName).append(" WHERE id = ?\n");
         sb.append("        \"\"\";\n\n");
         
         sb.append("    public static final String FIND_ALL = \"\"\"\n");
@@ -1112,11 +1791,11 @@ public class RepositoryDrivenDaoGenerator {
         sb.append("        \"\"\";\n\n");
         
         sb.append("    public static final String EXISTS_BY_ID = \"\"\"\n");
-        sb.append("        SELECT EXISTS(SELECT 1 FROM ").append(tableName).append(" WHERE id = :id)\n");
+        sb.append("        SELECT EXISTS(SELECT 1 FROM ").append(tableName).append(" WHERE id = ?)\n");
         sb.append("        \"\"\";\n\n");
         
         sb.append("    public static final String DELETE_BY_ID = \"\"\"\n");
-        sb.append("        DELETE FROM ").append(tableName).append(" WHERE id = :id\n");
+        sb.append("        DELETE FROM ").append(tableName).append(" WHERE id = ?\n");
         sb.append("        \"\"\";\n\n");
         
         // Generate INSERT and UPDATE queries
@@ -1124,7 +1803,7 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate INSERT and UPDATE SQL queries based on POJO fields
+     * Generate INSERT and UPDATE SQL queries based on POJO fields with positional parameters
      */
     private void generateInsertUpdateSqlQueries(StringBuilder sb, DaoGenerationModel model) {
         String tableName = model.getTableMetadata().getTableName();
@@ -1143,11 +1822,11 @@ public class RepositoryDrivenDaoGenerator {
                 insertColumns.add(columnName);
                 
                 if (field.getJavaType().contains("JsonNode")) {
-                    insertValues.add(":" + fieldName + "::jsonb");
-                    updateSets.add(columnName + " = :" + fieldName + "::jsonb");
+                    insertValues.add("?::jsonb");
+                    updateSets.add(columnName + " = ?::jsonb");
                 } else {
-                    insertValues.add(":" + fieldName);
-                    updateSets.add(columnName + " = :" + fieldName);
+                    insertValues.add("?");
+                    updateSets.add(columnName + " = ?");
                 }
             }
         }
@@ -1156,18 +1835,18 @@ public class RepositoryDrivenDaoGenerator {
         String insertValueList = String.join(", ", insertValues);
         String updateSetList = String.join(",\n            ", updateSets);
         
-        // INSERT with RETURNING id
+        // INSERT with RETURNING id - Pure JDBC compatible
         sb.append("    public static final String INSERT = \"\"\"\n");
         sb.append("        INSERT INTO ").append(tableName).append(" (").append(insertColumnList).append(")\n");
         sb.append("        VALUES (").append(insertValueList).append(")\n");
         sb.append("        RETURNING id\n");
         sb.append("        \"\"\";\n\n");
         
-        // UPDATE
+        // UPDATE - Pure JDBC compatible
         sb.append("    public static final String UPDATE = \"\"\"\n");
         sb.append("        UPDATE ").append(tableName).append(" SET\n");
         sb.append("            ").append(updateSetList).append("\n");
-        sb.append("        WHERE id = :id\n");
+        sb.append("        WHERE id = ?\n");
         sb.append("        \"\"\";\n\n");
     }
     
@@ -1270,8 +1949,35 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
+     * Check if method requires dynamic sorting
+     */
+    private boolean requiresDynamicSorting(String methodName, List<String> paramNames) {
+        return paramNames.stream().anyMatch(param -> 
+            param.toLowerCase().contains("sort") || 
+            param.equals("sort")
+        );
+    }
+    
+    /**
+     * Check if method requires pagination
+     */
+    private boolean requiresPagination(String methodName, List<String> paramNames) {
+        return paramNames.stream().anyMatch(param -> 
+            param.toLowerCase().contains("pageable") || 
+            param.equals("pageable")
+        );
+    }
+    
+    /**
+     * Remove hard-coded ORDER BY clause for dynamic sorting
+     */
+    private String removeSortClause(String sql) {
+        return sql.replaceAll("ORDER BY [^\\n]*", "").trim();
+    }
+    
+    /**
      * Process and convert SQL with intelligent parameter substitution
-     * Enhanced to use method-specific business logic rules
+     * Enhanced to use method-specific business logic rules and handle pagination/sorting
      */
     private String processAndConvertSql(String rawSql, List<String> paramNames, String methodName, String entityName) {
         if (rawSql == null || rawSql.trim().isEmpty()) {
@@ -1286,33 +1992,80 @@ public class RepositoryDrivenDaoGenerator {
         // Process executable SQL
         if (isExecutableQuery(rawSql)) {
             String cleanSql = cleanSqlQuery(rawSql);
+            // Complete any incomplete queries first
+            String completedSql = completeIncompleteQueries(cleanSql, methodName);
+            
+            // Handle pagination/sorting methods
+            if (requiresDynamicSorting(methodName, paramNames)) {
+                completedSql = removeSortClause(completedSql);
+            }
+            
+            if (requiresPagination(methodName, paramNames)) {
+                completedSql = addPaginationSupport(completedSql);
+            }
+            
             // Use enhanced method-specific parameter mapping
-            return applyMethodSpecificParameterRules(cleanSql, methodName, paramNames, entityName);
+            return applyMethodSpecificParameterRules(completedSql, methodName, paramNames, entityName);
         }
         
         return rawSql;
     }
     
     /**
-     * Convert positional parameters (?) to named parameters (:paramName)
-     * Enhanced with method-specific business logic rules
+     * Add pagination support to SQL query
      */
-    private String convertPositionalToNamedParameters(String sql, List<String> paramNames) {
+    private String addPaginationSupport(String sql) {
+        // For now, just return the base query - pagination will be added dynamically in implementation
+        return sql;
+    }
+    
+    /**
+     * Complete incomplete queries by replacing placeholders with actual SQL
+     */
+    private String completeIncompleteQueries(String sql, String methodName) {
         String result = sql;
-        int paramIndex = 0;
         
-        // Replace ? with :paramName in order of appearance
-        while (result.contains("?") && paramIndex < paramNames.size()) {
-            result = result.replaceFirst("\\?", ":" + paramNames.get(paramIndex));
-            paramIndex++;
+        // Replace [sort criteria] placeholder
+        if (result.contains("[sort criteria]")) {
+            result = result.replace("[sort criteria]", "c.id ASC");
         }
         
-        // Handle remaining ? with generic names if any
-        int genericIndex = 1;
-        while (result.contains("?")) {
-            result = result.replaceFirst("\\?", ":param" + genericIndex);
-            genericIndex++;
+        // Replace other common placeholders
+        if (result.contains("[order by")) {
+            result = result.replaceAll("\\[order by[^\\]]*\\]", "ORDER BY id ASC");
         }
+        
+        // Method-specific completions
+        switch (methodName) {
+            case "findAllByIdIn":
+                result = result.replace("ORDER BY [sort criteria]", "ORDER BY c.id ASC");
+                break;
+                
+            default:
+                // Handle any remaining placeholders
+                result = result.replaceAll("\\[[^\\]]*\\]", "");
+                break;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Convert named parameters (:paramName) to positional parameters (?) for Pure JDBC
+     * This is the opposite of the original method - we need positional parameters for Pure JDBC
+     */
+    private String convertNamedToPositionalParameters(String sql, List<String> paramNames) {
+        String result = sql;
+        
+        // Convert named parameters to positional parameters
+        for (String paramName : paramNames) {
+            // Replace :paramName with ?
+            result = result.replaceAll(":" + paramName + "\\b", "?");
+        }
+        
+        // Handle any remaining named parameters that weren't in the signature
+        // This catches cases where documentation has parameters not in method signature
+        result = result.replaceAll(":[a-zA-Z_][a-zA-Z0-9_]*", "?");
         
         return result;
     }
@@ -1327,7 +2080,7 @@ public class RepositoryDrivenDaoGenerator {
         }
         
         // Add other entity-specific rules here in the future
-        return convertPositionalToNamedParameters(sql, paramNames);
+        return convertNamedToPositionalParameters(sql, paramNames);
     }
     
     /**
@@ -1336,22 +2089,41 @@ public class RepositoryDrivenDaoGenerator {
     private String applyChecklistSpecificParameterRules(String sql, String methodName, List<String> paramNames) {
         switch (methodName) {
             case "updateChecklistDuringRecall":
-                // FIXED: Business rule - both created_by and modified_by use userId
-                return sql.replace("created_by = ?", "created_by = :userId")
-                         .replace("modified_by = ?", "modified_by = :userId")
-                         .replace("WHERE id = ?", "WHERE id = :checklistId");
+                // Special handling for updateChecklistDuringRecall - SQL has 3 parameters but method has 2
+                // SQL: SET created_by = ?, modified_by = ?, WHERE id = ?
+                // Method: updateChecklistDuringRecall(Long checklistId, Long userId)
+                // Parameter mapping: userId -> created_by, userId -> modified_by, checklistId -> id
+                return sql; // SQL is already correct with positional parameters
                          
             case "findAllChecklistIdsForCurrentFacilityAndOrganisationByObjectTypeInData":
-                // FIXED: Complex query with correct parameter mapping
-                return applyComplexChecklistQueryParameterMapping(sql, paramNames);
+                // FIXED: Convert complex query to Pure JDBC positional parameters
+                return convertComplexFacilityQueryToPositional(sql);
                 
             default:
-                return convertPositionalToNamedParameters(sql, paramNames);
+                return convertNamedToPositionalParameters(sql, paramNames);
         }
     }
     
     /**
-     * Apply complex checklist query parameter mapping
+     * Convert complex facility query to Pure JDBC positional parameters
+     */
+    private String convertComplexFacilityQueryToPositional(String sql) {
+        // Convert all named parameters to positional parameters for Pure JDBC
+        String result = sql;
+        
+        // Replace all named parameters with positional parameters
+        result = result.replace(":facilityId", "?")
+                       .replace(":organisationId", "?")
+                       .replace(":objectTypeId", "?")
+                       .replace(":archived", "?")
+                       .replace(":useCaseId", "?")
+                       .replace(":name", "?");  // This appears twice in the query
+        
+        return result;
+    }
+    
+    /**
+     * Apply complex checklist query parameter mapping (legacy method - kept for compatibility)
      */
     private String applyComplexChecklistQueryParameterMapping(String sql, List<String> paramNames) {
         // Expected parameters: facilityId, organisationId, objectTypeId, useCaseId, name, archived
@@ -1715,20 +2487,24 @@ public class RepositoryDrivenDaoGenerator {
     }
     
     /**
-     * Generate Spring Data placeholder types
+     * Generate Pure Java Data Types (replacement for Spring Data types)
      */
     private void generateSpringDataTypes(DaoGenerationModel model, String outputDir) throws IOException {
         StringBuilder sb = new StringBuilder();
         
         sb.append("package com.example.dwiDaoGenerator.").append(model.getEntityName().toLowerCase()).append(".generated;\n\n");
         sb.append("import java.util.List;\n");
+        sb.append("import java.util.Map;\n");
+        sb.append("import java.util.HashMap;\n");
+        sb.append("import java.util.ArrayList;\n");
         sb.append("import java.util.function.Function;\n\n");
         
         sb.append("/**\n");
-        sb.append(" * Placeholder types for Spring Data compatibility\n");
-        sb.append(" * Auto-generated simplified versions to avoid Spring Data dependencies\n");
+        sb.append(" * Pure Java Data Types - No Spring Dependencies\n");
+        sb.append(" * Replacement for Spring Data types with pure Java implementations\n");
+        sb.append(" * Manual resource management and transaction handling\n");
         sb.append(" */\n");
-        sb.append("public class SpringDataTypes {\n\n");
+        sb.append("public class DataTypes {\n\n");
         
         // Generate Page interface
         generatePageInterface(sb);
@@ -1947,6 +2723,36 @@ public class RepositoryDrivenDaoGenerator {
             String signature = method.getSignature();
             if (signature.contains("Page<") || signature.contains("Pageable") || 
                 signature.contains("Sort") || signature.contains("Specification")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if DataTypes imports are needed (Pure Java replacement for Spring Data types)
+     */
+    private boolean needsDataTypesImports(DaoGenerationModel model) {
+        for (CustomMethod method : model.getRepositoryDoc().getCustomMethods()) {
+            String signature = method.getSignature();
+            if (signature.contains("PageResult<") || signature.contains("PageRequest") || 
+                signature.contains("FilterCriteria")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if PaginationTypes imports are needed (shared pagination types)
+     */
+    private boolean needsPaginationImports(DaoGenerationModel model) {
+        for (CustomMethod method : model.getRepositoryDoc().getCustomMethods()) {
+            String signature = method.getSignature();
+            if (signature.contains("Page<") || signature.contains("Pageable") || 
+                signature.contains("Sort") || signature.contains("Specification") ||
+                signature.contains("PageResult<") || signature.contains("PageRequest") || 
+                signature.contains("FilterCriteria")) {
                 return true;
             }
         }

@@ -7,9 +7,9 @@ package com.example.dwiDaoGenerator.checklist.generated;
  */
 public final class ChecklistSql {
 
-    // Standard CRUD queries
+    // Standard CRUD queries with positional parameters
     public static final String FIND_BY_ID = """
-        SELECT * FROM checklists WHERE id = :id
+        SELECT * FROM checklists WHERE id = ?
         """;
 
     public static final String FIND_ALL = """
@@ -21,40 +21,40 @@ public final class ChecklistSql {
         """;
 
     public static final String EXISTS_BY_ID = """
-        SELECT EXISTS(SELECT 1 FROM checklists WHERE id = :id)
+        SELECT EXISTS(SELECT 1 FROM checklists WHERE id = ?)
         """;
 
     public static final String DELETE_BY_ID = """
-        DELETE FROM checklists WHERE id = :id
+        DELETE FROM checklists WHERE id = ?
         """;
 
     public static final String INSERT = """
         INSERT INTO checklists (released_at, code, organisations_id, modified_at, released_by, use_cases_id, review_cycle, description, job_log_columns, archived, created_at, created_by, name, is_global, modified_by, color_code, state, versions_id)
-        VALUES (:releasedAt, :code, :organisationsId, :modifiedAt, :releasedBy, :useCasesId, :reviewCycle, :description, :jobLogColumns::jsonb, :archived, :createdAt, :createdBy, :name, :isGlobal, :modifiedBy, :colorCode, :state, :versionsId)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         RETURNING id
         """;
 
     public static final String UPDATE = """
         UPDATE checklists SET
-            released_at = :releasedAt,
-            code = :code,
-            organisations_id = :organisationsId,
-            modified_at = :modifiedAt,
-            released_by = :releasedBy,
-            use_cases_id = :useCasesId,
-            review_cycle = :reviewCycle,
-            description = :description,
-            job_log_columns = :jobLogColumns::jsonb,
-            archived = :archived,
-            created_at = :createdAt,
-            created_by = :createdBy,
-            name = :name,
-            is_global = :isGlobal,
-            modified_by = :modifiedBy,
-            color_code = :colorCode,
-            state = :state,
-            versions_id = :versionsId
-        WHERE id = :id
+            released_at = ?,
+            code = ?,
+            organisations_id = ?,
+            modified_at = ?,
+            released_by = ?,
+            use_cases_id = ?,
+            review_cycle = ?,
+            description = ?,
+            job_log_columns = ?::jsonb,
+            archived = ?,
+            created_at = ?,
+            created_by = ?,
+            name = ?,
+            is_global = ?,
+            modified_by = ?,
+            color_code = ?,
+            state = ?,
+            versions_id = ?
+        WHERE id = ?
         """;
 
     // Custom method queries from repository documentation
@@ -69,8 +69,7 @@ public final class ChecklistSql {
      */
     public static final String FIND_ALL_BY_ID_IN = """
         SELECT c.* FROM checklists c
-        WHERE c.id IN (:id)
-        ORDER BY [sort criteria]
+        WHERE c.id IN (?)
         """;
 
     /**
@@ -81,7 +80,7 @@ public final class ChecklistSql {
         SELECT c.* FROM checklists c
         INNER JOIN stages s ON c.id = s.checklists_id
         INNER JOIN tasks t ON s.id = t.stages_id
-        WHERE t.id = :taskId
+        WHERE t.id = ?
         """;
 
     /**
@@ -89,7 +88,7 @@ public final class ChecklistSql {
      * Parameters: state, checklistId
      */
     public static final String UPDATE_STATE = """
-        UPDATE checklists SET state = :state WHERE id = :checklistId
+        UPDATE checklists SET state = ? WHERE id = ?
         """;
 
     /**
@@ -97,7 +96,7 @@ public final class ChecklistSql {
      * Parameters: checklistId
      */
     public static final String GET_CHECKLIST_CODE_BY_CHECKLIST_ID = """
-        SELECT code FROM checklists WHERE id = :checklistId
+        SELECT code FROM checklists WHERE id = ?
         """;
 
     /**
@@ -106,7 +105,7 @@ public final class ChecklistSql {
      */
     public static final String REMOVE_CHECKLIST_FACILITY_MAPPING = """
         DELETE FROM checklist_facility_mapping
-        WHERE checklists_id = :checklistId AND facilities_id IN (:facilityIds)
+        WHERE checklists_id = ? AND facilities_id IN (?)
         """;
 
     /**
@@ -116,7 +115,7 @@ public final class ChecklistSql {
     public static final String FIND_BY_STAGE_ID = """
         SELECT c.state FROM checklists c
         INNER JOIN stages s ON c.id = s.checklists_id
-        WHERE s.id = :stageId
+        WHERE s.id = ?
         """;
 
     /**
@@ -124,7 +123,7 @@ public final class ChecklistSql {
      * Parameters: useCaseId
      */
     public static final String FIND_BY_USE_CASE_ID = """
-        SELECT c.* FROM checklists c WHERE c.use_cases_id = :useCaseId
+        SELECT c.* FROM checklists c WHERE c.use_cases_id = ?
         """;
 
     /**
@@ -132,7 +131,7 @@ public final class ChecklistSql {
      * Parameters: stateSet
      */
     public static final String FIND_BY_STATE_IN_ORDER_BY_STATE_DESC = """
-        SELECT id FROM checklists WHERE state IN (:stateSet) ORDER BY state DESC
+        SELECT id FROM checklists WHERE state IN (?) ORDER BY state DESC
         """;
 
     /**
@@ -140,7 +139,7 @@ public final class ChecklistSql {
      * Parameters: state
      */
     public static final String FIND_BY_STATE_NOT = """
-        SELECT id FROM checklists WHERE state != :state
+        SELECT id FROM checklists WHERE state != ?
         """;
 
     /**
@@ -150,7 +149,7 @@ public final class ChecklistSql {
     public static final String FIND_CHECKLIST_INFO_BY_ID = """
         SELECT c.id as id, c.name as name, c.code as code, c.state as state
         FROM checklists c
-        WHERE id = :id
+        WHERE id = ?
         """;
 
     /**
@@ -159,8 +158,8 @@ public final class ChecklistSql {
      */
     public static final String UPDATE_CHECKLIST_DURING_RECALL = """
         UPDATE checklists
-        SET state = 'BEING_BUILT', created_by = :userId, modified_by = :userId, review_cycle = 1
-        WHERE id = :checklistId
+        SET state = 'BEING_BUILT', created_by = ?, modified_by = ?, review_cycle = 1
+        WHERE id = ?
         """;
 
     /**
@@ -172,14 +171,14 @@ public final class ChecklistSql {
         FROM checklists c
         INNER JOIN checklist_facility_mapping cfm ON c.id = cfm.checklists_id
         INNER JOIN parameters p ON p.checklists_id = c.id
-        WHERE (cfm.facilities_id = :facilityId OR facilities_id = -1)
-        AND c.organisations_id = :organisationId
+        WHERE (cfm.facilities_id = ? OR facilities_id = -1)
+        AND c.organisations_id = ?
         AND p.type='RESOURCE'
-        AND p.data->>'objectTypeId' = :objectTypeId
-        AND c.archived = :archived
-        AND c.use_cases_id = :useCaseId
+        AND p.data->>'objectTypeId'= ?
+        AND c.archived = ?
+        AND c.use_cases_id = ?
         AND c.state = 'PUBLISHED'
-        AND (CAST(:name as varchar) IS NULL OR c.name ilike '%' || :name || '%')
+        AND (CAST(? as varchar) IS NULL OR c.name ilike '%' || ? || '%')
         ORDER BY c.id DESC
         """;
 
@@ -190,7 +189,7 @@ public final class ChecklistSql {
     public static final String GET_ALL_BY_IDS_IN = """
         SELECT c.id, c.code, c.name, c.color_code as colorCode
         FROM checklists c
-        WHERE id IN (:checklistIds)
+        WHERE id IN (?)
         ORDER BY id DESC
         """;
 
@@ -201,7 +200,7 @@ public final class ChecklistSql {
     public static final String GET_CHECKLIST_JOB_LITE_DTO_BY_ID = """
         SELECT c.id, c.name, c.code
         FROM checklists c
-        WHERE c.id = :checklistId
+        WHERE c.id = ?
         """;
 
     private ChecklistSql() {
